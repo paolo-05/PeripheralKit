@@ -1,7 +1,7 @@
 import Foundation
 import IOKit
 
-enum MKSleepError: LocalizedError {
+enum PeripheralKitError: LocalizedError {
     case deviceNotFound(String)
     case deviceOpenFailed(String, IOReturn)
     case reportFailed(String, IOReturn)
@@ -17,7 +17,7 @@ enum MKSleepError: LocalizedError {
         case .reportFailed(let name, let code):
             return "Scrittura HID fallita su \(name) (IOKit 0x\(String(UInt32(bitPattern: code), radix: 16)))."
         case .permissionDenied:
-            return "Accesso HID negato. Abilita mksleep-rgb in Impostazioni di Sistema > Privacy e sicurezza > Monitoraggio input."
+            return "Accesso HID negato. Abilita PeripheralKit in Impostazioni di Sistema > Privacy e sicurezza > Monitoraggio input."
         case .invalidConfiguration(let message):
             return message
         }

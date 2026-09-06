@@ -7,13 +7,11 @@ protocol RuleStore {
 
 struct ConfigurationStore: RuleStore {
     let directory: URL
-    let legacyURL: URL
     var url: URL { directory.appendingPathComponent("settings.json") }
 
-    init(directory: URL? = nil, legacyURL: URL? = nil) {
+    init(directory: URL? = nil) {
         let support = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
         self.directory = directory ?? support.appendingPathComponent("PeripheralKit")
-        self.legacyURL = legacyURL ?? support.appendingPathComponent("MKSleepRGB/config.json")
     }
 
     func load() throws -> AppConfiguration {
@@ -22,10 +20,7 @@ struct ConfigurationStore: RuleStore {
             try config.validate()
             return config
         }
-        var config = AppConfiguration()
-        if FileManager.default.fileExists(atPath: legacyURL.path) {
-            config.rgb = try Configuration.load(from: legacyURL.path)
-        }
+        let config = AppConfiguration()
         try config.validate()
         return config
     }

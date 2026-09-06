@@ -1,46 +1,32 @@
-# Verifiche del 6 settembre 2026
+# Verifiche di PeripheralKit — 6 settembre 2026
 
-## Automatiche
+## Funzionalità confermate
 
-- Baseline MKSleepRGB: 6 test superati prima della ristrutturazione.
-- Milestone 1: build SwiftPM e Xcode Debug riuscite; 6 regressioni superate.
-- Milestone 2 e integrazione RGB: 25 test superati, nessun errore.
-- Build release tramite scripts/build.sh: bundle .app prodotto e firma verificata.
-- Xcode Debug sul progetto aggiornato: riuscito.
-- Sintassi degli script zsh, plist e git diff --check: validi.
+- L'utente conferma il corretto funzionamento della gestione RGB attuale.
+- Il servizio precedente non è caricato e la sua registrazione è assente.
+- Il JSON PeripheralKit contiene i profili RGB e le regole mouse attivi; viene conservato durante aggiornamento e pulizia.
+- Le scorciatoie macOS Ctrl+←/→ risultano abilitate e corrispondono alle azioni configurate.
 
-Il sandbox del runner inizialmente impediva ai due test Quartz di accedere al WindowServer. Eseguiti fuori da quel sandbox, tutti e 25 passano. I test non pubblicano input. Il build Xcode nel sandbox emette diagnostica dei servizi Simulator non disponibili e delle cache utente non scrivibili, ma il target macOS compila; nessun warning del compilatore Swift nel build finale.
+## Correzione cambio Space
 
-## Interfaccia e inventario reali
+- Invio degli eventi spostato al livello HID, prima dell'elaborazione delle scorciatoie di sessione.
+- Controllo del permesso di pubblicare eventi; errore esplicito se macOS lo nega.
+- Prova manuale delle due direzioni nella pagina Mouse e diagnostica distinta fra invio e notifica spaceChanged.
+- Regressioni per destinazione HID, coppie di eventi, modificatori, rifiuto dell'invio e conservazione della configurazione RGB.
+- I test Quartz raccolgono gli eventi in memoria, senza pubblicare input globale.
 
-Avviato il bundle .app e verificata l'interfaccia nativa via accessibility tree e screenshot:
+## Flusso Xcode
 
-- finestra preferenze con sidebar e pagine Generali/Mouse/Dispositivi;
-- pulsante 4 → Space precedente e pulsante 5 → Space successivo;
-- controlli consumo evento, attivazione e registrazione disabilitata quando manca Accessibilità;
-- messaggio esplicito che il servizio RGB precedente gestisce ancora le luci;
-- inventario rileva Drevo keyboard 0416:a0f8 e Razer DeathAdder V2 1532:0084, oltre ai dispositivi Apple;
-- permessi mancanti mostrati senza richieste automatiche.
+Schemi condivisi per sviluppo/test/Archive e installazione con Copy Files e launcher Swift. Firma locale senza portachiavi dedicato; nessuno script shell nel lifecycle. Le verifiche precedenti di build, installazione e ⌘R sono riuscite.
 
-## Da verificare con l'utente
+## Verifiche fisiche
 
-- Autorizzazioni TCC del bundle installato e mantenimento dopo aggiornamento firmato.
-- Click fisico sui due pulsanti DeathAdder e cambio effettivo di Space da Safari/Finder.
-- Consumo di Indietro/Avanti nelle app e cattura fisica.
-- Stop/wake reale del Mac, display sleep e re-enumerazione lenta delle periferiche.
-- Installazione/migrazione e avvio al successivo login.
+Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio Space con i pulsanti fisici dopo questa correzione, il mantenimento dei permessi dopo aggiornamento e l'avvio al login. La prova deve avvenire su un desktop con uno Space adiacente nella direzione scelta.
 
-Non è stato sospeso il Mac né inviato input sintetico globale durante i test. Il vecchio servizio RGB è conservato fino alla migrazione avviata dall'utente nell'app installata.
+## Risultato della build aggiornata
 
-## Flusso Xcode nativo (aggiornamento)
-
-- Rimossi build.sh, install.sh, uninstall.sh e la configurazione del certificato dedicato.
-- `xcodebuild test`, schema PeripheralKit, destinazione My Mac: 31 test passati, inclusi quattro test di migrazione con servizio simulato e due regressioni per gli argomenti di avvio Xcode/Cocoa.
-- Schema PeripheralKit Install: Copy Files verificato prima in una cartella temporanea e poi in `~/Applications`.
-- App installata come binario universale arm64/x86_64, firma Xcode «Sign to Run Locally», verificata con codesign.
-- Nessuna richiesta al portachiavi MKSleepRGB durante build e installazione.
-- La migrazione reale del vecchio servizio e le autorizzazioni TCC restano azioni dell'utente nell'app.
-
-- Verifica nella UI di Xcode: schema PeripheralKit Install, ⌘R, launcher terminato con codice 0; processo avviato da `~/Applications/PeripheralKit.app` con `--settings`.
-- Finestra installata verificata: sidebar completa, richiesta dei permessi e migrazione disabilitata fino a Monitoraggio input.
-- Archive Release aggiornato riuscito.
+- Xcode XCTest: 29 test superati, 0 falliti (rimossi quattro test della migrazione completata, aggiunte due regressioni dell'invio).
+- Build Release, installazione tramite PeripheralKit Install e Archive riusciti; firma del bundle verificata con codesign.
+- UI installata verificata: nessun banner di migrazione, controlli Prova cambio Space presenti, configurazione RGB e mappature preservate.
+- Dopo la ricompilazione, macOS richiede di riabilitare Accessibilità e Monitoraggio input: prova fisica della correzione in attesa dell'utente. Nessun permesso è stato concesso automaticamente.
+- Nessun riferimento al vecchio nome nei file versionati attuali. Componenti dismessi spostati nel Cestino; impostazioni correnti preservate.

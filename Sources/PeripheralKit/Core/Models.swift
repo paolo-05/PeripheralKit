@@ -103,23 +103,23 @@ struct AppConfiguration: Codable, Equatable, Sendable {
     ]
 
     func validate() throws {
-        guard schemaVersion == 1 else { throw MKSleepError.invalidConfiguration("Versione configurazione non supportata: \(schemaVersion)") }
+        guard schemaVersion == 1 else { throw PeripheralKitError.invalidConfiguration("Versione configurazione non supportata: \(schemaVersion)") }
         guard rgb.wakeDelaySeconds.isFinite, (0...30).contains(rgb.wakeDelaySeconds) else {
-            throw MKSleepError.invalidConfiguration("Il ritardo di risveglio deve essere tra 0 e 30 secondi.")
+            throw PeripheralKitError.invalidConfiguration("Il ritardo di risveglio deve essere tra 0 e 30 secondi.")
         }
         _ = try RGBColor(hex: rgb.keyboard.color)
         _ = try RGBColor(hex: rgb.keyboard.secondaryColor)
         _ = try RGBColor(hex: rgb.mouse.color)
         guard Set(rules.map(\.id)).count == rules.count, rules.count <= 256 else {
-            throw MKSleepError.invalidConfiguration("Regole duplicate o troppe regole (massimo 256).")
+            throw PeripheralKitError.invalidConfiguration("Regole duplicate o troppe regole (massimo 256).")
         }
         for rule in rules {
             if case .mouseButton(let button) = rule.trigger, !(3...32).contains(button) {
-                throw MKSleepError.invalidConfiguration("Sono ammessi solo pulsanti aggiuntivi da 3 a 32.")
+                throw PeripheralKitError.invalidConfiguration("Sono ammessi solo pulsanti aggiuntivi da 3 a 32.")
             }
             for action in rule.actions {
                 if case .shortcut(let shortcut) = action, shortcut.keyCode > 127 {
-                    throw MKSleepError.invalidConfiguration("Codice tasto non valido (0–127).")
+                    throw PeripheralKitError.invalidConfiguration("Codice tasto non valido (0–127).")
                 }
             }
         }
@@ -131,9 +131,8 @@ struct AppConfiguration: Codable, Equatable, Sendable {
 enum LaunchMode: Equatable {
     case application, commandLine
 
-    static func resolve(executableName: String, arguments: [String]) -> LaunchMode {
-        if executableName == "mksleep-rgb" { return .commandLine }
-        let commands = ["help", "--help", "-h", "devices", "check", "authorize", "off", "on", "test", "daemon", "unregister-login"]
+    static func resolve(arguments: [String]) -> LaunchMode {
+        let commands = ["help", "--help", "-h", "devices", "check", "authorize", "off", "on", "test", "unregister-login"]
         return arguments.first.map { commands.contains($0) } == true ? .commandLine : .application
     }
 }

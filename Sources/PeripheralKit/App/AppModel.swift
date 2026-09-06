@@ -9,15 +9,13 @@ final class AppModel: ObservableObject {
         didSet {
             guard !loading else { return }
             do {
-                guard !configurationReadFailed else { throw MKSleepError.invalidConfiguration("Configurazione non salvata: correggi il file indicato e riapri l'app.") }
+                guard !configurationReadFailed else { throw PeripheralKitError.invalidConfiguration("Configurazione non salvata: correggi il file indicato e riapri l'app.") }
                 try store.save(configuration)
                 errorMessage = nil
             } catch { report(error) }
             configurationChanged?()
         }
     }
-    @Published var legacyRGBWarning = false
-    @Published var migratingLegacyService = false
     @Published var errorMessage: String?
     @Published var accessibilityGranted = false
     @Published var hidGranted = false
@@ -31,6 +29,7 @@ final class AppModel: ObservableObject {
     let safeMode: Bool
     let store = ConfigurationStore()
     var configurationChanged: (() -> Void)?
+    var testActionRequested: ((Action) -> Void)?
     var captureRequested: ((Bool) -> Void)?
     private var loading = true
     private var configurationReadFailed = false
@@ -118,27 +117,6 @@ final class AppModel: ObservableObject {
         let parent = Bundle.main.bundleURL.deletingLastPathComponent().standardizedFileURL
         return parent == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications").standardizedFileURL
             || parent == URL(fileURLWithPath: "/Applications", isDirectory: true).standardizedFileURL
-    }
-
-    var canMigrateLegacyService: Bool { isInstalled && hidGranted && !configurationReadFailed }
-
-    func migrateLegacyService() {
-        guard !migratingLegacyService, canMigrateLegacyService else { return }
-        migratingLegacyService = true
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        Task { [weak self] in
-            guard let self else { return }
-            defer { self.migratingLegacyService = false }
-            do {
-                let backup = try await Task.detached(priority: .utility) {
-                    try LegacyServiceMigration(homeDirectory: home).migrate()
-                }.value
-                self.legacyRGBWarning = false
-                self.errorMessage = nil
-                self.diagnostics.record(backup == nil ? "Servizio precedente già migrato" : "MKSleepRGB arrestato e archiviato. PeripheralKit gestisce ora gli RGB.")
-                self.configurationChanged?()
-            } catch { self.report(error) }
-        }
     }
 
     func recordButton() { recording = true; captureRequested?(true) }

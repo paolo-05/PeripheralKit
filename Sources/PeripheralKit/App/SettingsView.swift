@@ -35,18 +35,6 @@ struct SettingsView: View {
                     Text((page ?? .general).rawValue).font(.title2.bold())
                     if model.safeMode { Label("Modalità sicura: rimappatura sospesa", systemImage: "shield").foregroundStyle(.secondary) }
                 }.padding(24)
-                if model.legacyRGBWarning {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("RGB gestito dal servizio precedente MKSleepRGB.", systemImage: "info.circle")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Button(model.migratingLegacyService ? "Migrazione in corso…" : "Migra da MKSleepRGB") { model.migrateLegacyService() }
-                            .disabled(model.migratingLegacyService || !model.canMigrateLegacyService)
-                        Text(model.isInstalled && !model.hidGranted ? "Autorizza prima Monitoraggio input nella sezione Generali. Il vecchio servizio continua a gestire le luci." : model.isInstalled
-                             ? "Arresta il vecchio servizio e passa il controllo a PeripheralKit. Configurazione e backup vengono conservati."
-                             : "Installa l'app con lo schema PeripheralKit Install di Xcode, poi riaprila da Applicazioni.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }.padding(.horizontal, 24).padding(.bottom, 12)
-                }
                 if let error = model.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
                         .textSelection(.enabled).padding(.horizontal, 24).padding(.bottom, 12)
@@ -128,7 +116,13 @@ struct SettingsView: View {
                 }
                 if let button = model.lastButton { Text("Ultimo pulsante rilevato: \(button)").font(.caption).foregroundStyle(.secondary) }
             }
-            Section {
+            Section("Prova cambio Space") {
+                HStack {
+                    Button("Space precedente") { model.testActionRequested?(.previousSpace) }
+                    Button("Space successivo") { model.testActionRequested?(.nextSpace) }
+                }.disabled(!model.accessibilityGranted || model.safeMode)
+                Text("La prova invia la stessa azione dei pulsanti laterali. Servono almeno due Space; arrivati al primo o all'ultimo non si passa all'estremo opposto.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Text("Per cambiare Space, abilita Ctrl + ← e Ctrl + → in Impostazioni di Sistema → Tastiera → Abbreviazioni → Mission Control. Mission Control usa Ctrl + ↑. Puoi modificare ogni assegnazione.")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -174,7 +168,7 @@ struct SettingsView: View {
             }
             Section {
                 Button("Mostra configurazione nel Finder") { NSWorkspace.shared.selectFile(model.store.url.path, inFileViewerRootedAtPath: model.store.directory.path) }
-                Text("Il profilo RGB precedente viene importato da MKSleepRGB al primo avvio. Per modificare colori ed effetti, chiudi l'app e modifica la sezione rgb del JSON.").font(.caption).foregroundStyle(.secondary)
+                Text("Per modificare colori ed effetti, chiudi l'app e modifica la sezione rgb delle impostazioni di PeripheralKit.").font(.caption).foregroundStyle(.secondary)
             }
         }.formStyle(.grouped)
     }

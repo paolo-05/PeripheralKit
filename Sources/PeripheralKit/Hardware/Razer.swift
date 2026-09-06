@@ -78,7 +78,7 @@ final class RazerDeathAdderV2 {
     func connect() throws {
         let matches = try session.discover(vendorID: Self.vendorID, productID: Self.productID)
         guard let descriptor = matches.first(where: { $0.maxFeatureReportSize == 90 }) else {
-            throw MKSleepError.deviceNotFound("Razer DeathAdder V2, interfaccia feature da 90 byte")
+            throw PeripheralKitError.deviceNotFound("Razer DeathAdder V2, interfaccia feature da 90 byte")
         }
         device = try session.open(descriptor, named: "Razer DeathAdder V2")
     }
@@ -89,14 +89,14 @@ final class RazerDeathAdderV2 {
     }
 
     func firmwareVersion() throws -> String {
-        guard let device else { throw MKSleepError.deviceNotFound("Razer DeathAdder V2") }
+        guard let device else { throw PeripheralKitError.deviceNotFound("Razer DeathAdder V2") }
         try send(RazerReport.firmwareQuery())
         Thread.sleep(forTimeInterval: 0.3)
         var response = [UInt8](repeating: 0, count: 90)
         var length = CFIndex(response.count)
         let result = IOHIDDeviceGetReport(device, kIOHIDReportTypeFeature, 0, &response, &length)
         guard result == kIOReturnSuccess, length >= 11 else {
-            throw MKSleepError.reportFailed("Razer DeathAdder V2 (lettura firmware)", result)
+            throw PeripheralKitError.reportFailed("Razer DeathAdder V2 (lettura firmware)", result)
         }
         return "\(response[9]).\(response[10])"
     }
@@ -109,11 +109,11 @@ final class RazerDeathAdderV2 {
     }
 
     private func send(_ report: RazerReport) throws {
-        guard let device else { throw MKSleepError.deviceNotFound("Razer DeathAdder V2") }
+        guard let device else { throw PeripheralKitError.deviceNotFound("Razer DeathAdder V2") }
         var bytes = report.bytes
         let result = IOHIDDeviceSetReport(device, kIOHIDReportTypeFeature, 0, &bytes, bytes.count)
         guard result == kIOReturnSuccess else {
-            throw MKSleepError.reportFailed("Razer DeathAdder V2", result)
+            throw PeripheralKitError.reportFailed("Razer DeathAdder V2", result)
         }
     }
 }

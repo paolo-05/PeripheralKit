@@ -10,9 +10,6 @@ final class AppRuntime {
     private var policy = SleepPolicy()
     private var powerTask: Task<Void, Never>?
     private var captureTimeout: Task<Void, Never>?
-    private var legacyAgentPresent: Bool {
-        FileManager.default.fileExists(atPath: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/LaunchAgents/com.local.mksleep-rgb.plist").path)
-    }
 
     init(model: AppModel, actions: any ActionExecutor = ActionEngine()) {
         self.model = model
@@ -24,6 +21,13 @@ final class AppRuntime {
     }
 
     func start() {
+        model.testActionRequested = { [weak self] action in
+            guard let self, !self.model.safeMode else { return }
+            do {
+                try self.actions.execute([action])
+                self.model.diagnostics.record("Prova: scorciatoia inviata")
+            } catch { self.model.report(error) }
+        }
         model.configurationChanged = { [weak self] in self?.updateConfiguration() }
         model.captureRequested = { [weak self] recording in
             guard let self else { return }
@@ -51,7 +55,7 @@ final class AppRuntime {
             // Dispatch its immutable action snapshot even if preferences changed.
             do {
                 try self.actions.execute(rule.actions)
-                self.model.diagnostics.record("Regola eseguita: \(rule.name)")
+                self.model.diagnostics.record("Scorciatoia inviata: \(rule.name)")
             } catch { self.model.report(error) }
         }
         input.onTapRecovery = { [weak self] in self?.model.diagnostics.record("Monitor mouse riattivato da macOS") }
@@ -65,10 +69,7 @@ final class AppRuntime {
         input.foregroundApplication = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         system.start()
         updateConfiguration()
-        if legacyAgentPresent {
-            model.diagnostics.record("RGB sospeso: è ancora installato il LaunchAgent MKSleepRGB. Usa il pulsante Migra da MKSleepRGB nell'app installata.", error: true)
-            model.legacyRGBWarning = true
-        }
+
     }
 
     private func updateConfiguration() {
@@ -96,8 +97,6 @@ final class AppRuntime {
     }
 
     private func updatePower() {
-        guard !legacyAgentPresent else { return }
-        model.legacyRGBWarning = false
         let configuration = model.configuration
         let sleep = policy.shouldSleep(configuration: configuration)
         let previous = powerTask

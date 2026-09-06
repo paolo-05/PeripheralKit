@@ -8,13 +8,13 @@ Decisione del 6 settembre 2026: utility macOS 14+, Swift 6, SwiftUI/AppKit, menu
 | --- | --- | --- | --- |
 | App e preferenze | SwiftUI, NSStatusItem, NSWindow | Nessun permesso | LSUIElement, finestra riapribile dal menu |
 | Input | CGEvent.tapCreate, session event tap attivo | Accessibilità; verificare TCC sul bundle firmato. App distribuita senza App Sandbox | Solo otherMouseDown/Up; niente testo tastiera. Tap non disponibile: nessuna soppressione, stato visibile |
-| Azioni | CGEvent keyboard events | Accessibilità | Ctrl+frecce e Ctrl+su dipendono dalle scorciatoie abilitate in macOS; scorciatoia personalizzabile |
+| Azioni | CGEvent keyboard events, post a cghidEventTap | Accessibilità | Ctrl+frecce e Ctrl+su dipendono dalle scorciatoie abilitate in macOS; scorciatoia personalizzabile |
 | Dispositivi | IOHIDManager e proprietà IOHIDDevice | Monitoraggio input per accesso HID, richiesta esplicita | Identità VID/PID + seriale, altrimenti location e interfaccia; non stabile cambiando porta |
 | Regole | Modelli Codable, matcher sincrono puro | Nessuno | Una regola per pulsante nella UI; prima corrispondenza vince; sequenza di azioni separata dal tap |
 | Sleep | NSWorkspace willSleep/didWake e screensDidSleep/Wake | Nessuno | Conserviamo il comportamento già usato. Le notifiche non garantiscono completamento USB prima della sospensione; nessuna assertion che ritardi lo stop |
 | RGB | Adapter compilati, IOHIDDeviceSetReport | Accesso HID, no sandbox nella distribuzione locale | Drevo output 32 byte e Razer feature 90 byte già presenti. Ripristino del profilo configurato, NON lettura dello stato arbitrario del firmware |
 | Login | SMAppService.mainApp | App bundle installato, eventuale approvazione in Impostazioni | Stato reale del servizio; niente nuovo LaunchAgent |
-| Persistenza | JSON atomico in Application Support | Nessuno fuori sandbox | Importazione non distruttiva del vecchio config RGB, errori esposti senza sovrascrivere file corrotto |
+| Persistenza | JSON atomico in Application Support | Nessuno fuori sandbox | Unico settings.json PeripheralKit, errori esposti senza sovrascrivere file corrotto |
 | Diagnostica | Logger unificato + buffer in memoria limitato | Nessuno | Metadati dei soli pulsanti aggiuntivi; nessun contenuto digitato |
 
 ## Identità degli eventi
@@ -44,7 +44,7 @@ SystemEventMonitor → stato combinato sistema/schermo → coordinatore RGB → 
 3. Accettazione manuale su DeathAdder: retro → Space precedente, fronte → successivo. Senza permessi e input fisico non dichiarare superata questa verifica.
 4. In seguito: identificazione per dispositivo, profili app, editor automazioni, snapshot reale se il protocollo lo permette, OpenRGB opzionale.
 
-Il vecchio daemon deve essere disabilitato durante l'installazione della nuova app per evitare due writer HID. Conservare config e firma locale; il cambio bundle ID richiede nuovi permessi TCC. Non importare codice GPL da OpenRazer/OpenRGB: i pacchetti esistenti restano isolati, riferimenti MIT RazerControl e documentazione protocollo da riesaminare prima di distribuzione pubblica. Nessuna licenza generale inventata.
+Non importare codice GPL da OpenRazer/OpenRGB: i pacchetti esistenti restano isolati, riferimenti MIT RazerControl e documentazione protocollo da riesaminare prima di distribuzione pubblica. Nessuna licenza generale inventata.
 
 ## Fonti e verifica API
 
@@ -61,6 +61,8 @@ Le firme effettive vengono verificate compilando contro il SDK macOS locale. Nes
 
 Il progetto Xcode gestisce build, test, archive e installazione. Due schemi condivisi: `PeripheralKit` e `PeripheralKit Install`. Il secondo usa un target aggregato dipendente dall'app e una fase nativa Copy Files, con destinazione configurabile in `Configuration/Local.xcconfig`. Nessuna fase shell, nessun keychain dedicato: firma locale Xcode (`Sign to Run Locally`).
 
-`PeripheralKitTests` è un target XCTest senza host che compila gli stessi sorgenti di produzione esclusi CLI e main, così i test non avviano monitor, TCC o migrazioni. Le dipendenze hardware e launchctl sono sostituite da mock.
+`PeripheralKitTests` è un target XCTest senza host che compila gli stessi sorgenti di produzione esclusi CLI e main, così i test non avviano monitor, TCC. Le dipendenze hardware sono sostituite da mock.
 
-`LegacyServiceMigration` verifica il vecchio plist, ne scrive e verifica il backup, arresta il solo servizio noto con Foundation Process/launchctl e rimuove la registrazione originale solo dopo aver verificato che il servizio sia scaricato. Configurazione e portachiavi rimangono intatti. L'azione richiede un click nella copia installata, permesso HID e configurazione valida. Non viene eseguita da una build Xcode o dai test.
+Le preferenze RGB e mouse sono caricate soltanto dal file PeripheralKit. Il coordinatore RGB dell'app è l'unico monitor di stop/risveglio. La CLI offre operazioni diagnostiche e RGB esplicite, senza un secondo servizio residente.
+
+ActionEngine controlla CGPreflightPostEventAccess e pubblica coppie down/up marcate a cghidEventTap. Il tap di ricezione mouse resta a livello sessione. La UI permette di provare il cambio Space; una notifica spaceChanged costituisce una conferma separata dall'invio.

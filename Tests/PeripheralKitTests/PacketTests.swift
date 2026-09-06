@@ -40,17 +40,24 @@ final class PacketTests: XCTestCase {
     }
 
     func testScreenSleepAndWakeToggleLighting() {
-        var state = WorkspacePowerState()
-        XCTAssertEqual(state.handle(.screensDidSleep), .sleeping)
-        XCTAssertNil(state.handle(.screensDidSleep))
-        XCTAssertEqual(state.handle(.screensDidWake), .awake)
+        var policy = SleepPolicy()
+        let config = AppConfiguration()
+        policy.receive(.displaysDidSleep)
+        XCTAssertTrue(policy.shouldSleep(configuration: config))
+        policy.receive(.displaysDidSleep)
+        XCTAssertTrue(policy.shouldSleep(configuration: config))
+        policy.receive(.displaysDidWake)
+        XCTAssertFalse(policy.shouldSleep(configuration: config))
     }
 
     func testSystemWakeDoesNotLightWhileScreensAreStillSleeping() {
-        var state = WorkspacePowerState()
-        XCTAssertEqual(state.handle(.screensDidSleep), .sleeping)
-        XCTAssertNil(state.handle(.systemWillSleep))
-        XCTAssertNil(state.handle(.systemDidWake))
-        XCTAssertEqual(state.handle(.screensDidWake), .awake)
+        var policy = SleepPolicy()
+        let config = AppConfiguration()
+        policy.receive(.displaysDidSleep)
+        policy.receive(.systemWillSleep)
+        policy.receive(.systemDidWake)
+        XCTAssertTrue(policy.shouldSleep(configuration: config))
+        policy.receive(.displaysDidWake)
+        XCTAssertFalse(policy.shouldSleep(configuration: config))
     }
 }

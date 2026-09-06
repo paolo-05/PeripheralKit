@@ -5,7 +5,7 @@ import SwiftUI
 struct PeripheralKitMain {
     @MainActor static func main() {
         let arguments = Array(CommandLine.arguments.dropFirst())
-        if LaunchMode.resolve(executableName: URL(fileURLWithPath: CommandLine.arguments[0]).lastPathComponent, arguments: arguments) == .commandLine {
+        if LaunchMode.resolve(arguments: arguments) == .commandLine {
             runCLI()
             return
         }

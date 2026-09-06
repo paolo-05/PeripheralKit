@@ -28,9 +28,9 @@ final class HIDSession {
         let openResult = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         guard openResult == kIOReturnSuccess else {
             if openResult == kIOReturnNotPermitted {
-                throw MKSleepError.permissionDenied
+                throw PeripheralKitError.permissionDenied
             }
-            throw MKSleepError.deviceOpenFailed("HID Manager", openResult)
+            throw PeripheralKitError.deviceOpenFailed("HID Manager", openResult)
         }
 
         self.manager = manager
@@ -42,7 +42,7 @@ final class HIDSession {
     func open(_ descriptor: HIDDescriptor, named name: String) throws -> IOHIDDevice {
         let result = IOHIDDeviceOpen(descriptor.device, IOOptionBits(kIOHIDOptionsTypeNone))
         guard result == kIOReturnSuccess else {
-            throw MKSleepError.deviceOpenFailed(name, result)
+            throw PeripheralKitError.deviceOpenFailed(name, result)
         }
         return descriptor.device
     }
@@ -84,7 +84,7 @@ func requestHIDAccessIfNeeded() throws {
     if access == kIOHIDAccessTypeUnknown {
         _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
     } else if access == kIOHIDAccessTypeDenied {
-        throw MKSleepError.permissionDenied
+        throw PeripheralKitError.permissionDenied
     }
 }
 

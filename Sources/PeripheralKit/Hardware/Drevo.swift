@@ -55,7 +55,7 @@ final class DrevoTyrfingV2 {
         // The RGB endpoint is the only one with a 64-byte output report.
         let candidates = matches.filter { $0.maxOutputReportSize >= 32 }
         guard let descriptor = candidates.max(by: { $0.maxOutputReportSize < $1.maxOutputReportSize }) else {
-            throw MKSleepError.deviceNotFound("Drevo Tyrfing V2, interfaccia RGB")
+            throw PeripheralKitError.deviceNotFound("Drevo Tyrfing V2, interfaccia RGB")
         }
         device = try session.open(descriptor, named: "Drevo Tyrfing V2")
     }
@@ -66,11 +66,11 @@ final class DrevoTyrfingV2 {
     }
 
     func apply(_ configuration: KeyboardConfiguration, sleeping: Bool) throws {
-        guard let device else { throw MKSleepError.deviceNotFound("Drevo Tyrfing V2") }
+        guard let device else { throw PeripheralKitError.deviceNotFound("Drevo Tyrfing V2") }
         var bytes = try DrevoPacket(configuration: configuration, sleeping: sleeping).bytes
         let result = IOHIDDeviceSetReport(device, kIOHIDReportTypeOutput, 0x06, &bytes, bytes.count)
         guard result == kIOReturnSuccess else {
-            throw MKSleepError.reportFailed("Drevo Tyrfing V2", result)
+            throw PeripheralKitError.reportFailed("Drevo Tyrfing V2", result)
         }
     }
 }

@@ -7,7 +7,7 @@ product
 Utente macOS con Drevo Tyrfing V2 e Razer DeathAdder V2, periferiche su dock USB e più Spaces. Configura pochi controlli e lascia l'utility nella barra menu.
 
 ## Product Purpose
-Estendere il daemon RGB esistente con mappature mouse e automazioni hardware, preservando lo spegnimento della scrivania quando schermi o Mac dormono.
+Offrire mappature mouse e automazioni hardware in un’app nativa, preservando lo spegnimento della scrivania quando schermi o Mac dormono.
 
 ## Brand Personality
 Nativa, discreta, comprensibile. Il riferimento richiesto è una piccola utility macOS, con preferenze standard e messaggi precisi.

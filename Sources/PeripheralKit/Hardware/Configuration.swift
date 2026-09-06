@@ -52,7 +52,7 @@ struct RGBColor: Equatable {
         var value = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if value.hasPrefix("#") { value.removeFirst() }
         guard value.count == 6, let number = UInt32(value, radix: 16) else {
-            throw MKSleepError.invalidConfiguration("Colore non valido: \(hex). Usa il formato #RRGGBB.")
+            throw PeripheralKitError.invalidConfiguration("Colore non valido: \(hex). Usa il formato #RRGGBB.")
         }
         red = UInt8((number >> 16) & 0xff)
         green = UInt8((number >> 8) & 0xff)

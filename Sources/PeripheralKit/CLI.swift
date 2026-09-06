@@ -2,6 +2,10 @@ import AppKit
 import Foundation
 import ServiceManagement
 
+private func printCLIError(_ message: String) {
+    FileHandle.standardError.write(Data("\(message)\n".utf8))
+}
+
 private struct Arguments {
     let command: String
     let configPath: String?
@@ -15,7 +19,7 @@ private struct Arguments {
         while !values.isEmpty {
             let flag = values.removeFirst()
             guard flag == "--config", let value = values.first else {
-                throw MKSleepError.invalidConfiguration("Argomento sconosciuto o incompleto: \(flag)")
+                throw PeripheralKitError.invalidConfiguration("Argomento sconosciuto o incompleto: \(flag)")
             }
             path = value
             values.removeFirst()
@@ -26,23 +30,21 @@ private struct Arguments {
 
 private func printHelp() {
     print("""
-    mksleep-rgb — spegne gli RGB USB durante lo stop del Mac
+    PeripheralKit — spegne gli RGB USB durante lo stop del Mac
 
     Uso:
-      mksleep-rgb devices
-      mksleep-rgb check
-      mksleep-rgb authorize
-      mksleep-rgb off [--config file.json]
-      mksleep-rgb on [--config file.json]
-      mksleep-rgb test [--config file.json]
-      mksleep-rgb daemon [--config file.json]
+      PeripheralKit devices
+      PeripheralKit check
+      PeripheralKit authorize
+      PeripheralKit off [--config file.json]
+      PeripheralKit on [--config file.json]
+      PeripheralKit test [--config file.json]
 
     devices  Elenca le interfacce HID compatibili senza scrivere nulla
     check    Apre i dispositivi e legge la versione firmware del mouse
     authorize Richiede a macOS il permesso Monitoraggio input
     off/on   Spegne o ripristina l'illuminazione
     test     Esegue un ciclo spento/acceso di due secondi
-    daemon   Resta in ascolto di stop e riattivazione
     """)
 }
 
@@ -95,12 +97,12 @@ private func authorizeHID() throws {
         }
         RunLoop.main.run(until: Date().addingTimeInterval(0.25))
     }
-    throw MKSleepError.permissionDenied
+    throw PeripheralKitError.permissionDenied
 }
 
 private func printResult(_ result: ApplyResult, state: PowerState) -> Int32 {
     for device in result.successes { print("\(device): RGB \(state == .sleeping ? "spenti" : "ripristinati")") }
-    for failure in result.failures { Log.error(failure) }
+    for failure in result.failures { printCLIError(failure) }
     return result.succeeded ? 0 : 1
 }
 
@@ -131,13 +133,13 @@ do {
         exit(0)
     }
 
-    guard ["off", "on", "test", "daemon"].contains(arguments.command) else {
+    guard ["off", "on", "test"].contains(arguments.command) else {
         printHelp()
-        throw MKSleepError.invalidConfiguration("Comando sconosciuto: \(arguments.command)")
+        throw PeripheralKitError.invalidConfiguration("Comando sconosciuto: \(arguments.command)")
     }
 
     try requestHIDAccessIfNeeded()
-    let configuration = try Configuration.load(from: arguments.configPath)
+    let configuration = try arguments.configPath.map { try Configuration.load(from: $0) } ?? ConfigurationStore().load().rgb
     let controller = RGBController(configuration: configuration)
 
     switch arguments.command {
@@ -151,14 +153,11 @@ do {
         guard offStatus == 0 else { exit(offStatus) }
         Thread.sleep(forTimeInterval: 2)
         exit(printResult(controller.apply(.awake), state: .awake))
-    case "daemon":
-        let watcher = SleepWatcher(controller: controller)
-        watcher.run()
     default:
         fatalError("Comando già validato")
     }
 } catch {
-    Log.error(error.localizedDescription)
+    printCLIError(error.localizedDescription)
     exit(1)
 }
 

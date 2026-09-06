@@ -7,7 +7,6 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "PeripheralKit", targets: ["PeripheralKit"]),
-        .executable(name: "mksleep-rgb", targets: ["PeripheralKit"]),
     ],
     targets: [
         .executableTarget(name: "PeripheralKit"),

@@ -6,15 +6,14 @@ import CoreGraphics
 
 final class EngineTests: XCTestCase {
     func testXcodeAndCocoaArgumentsLaunchTheApp() {
-        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["-NSDocumentRevisionsDebugMode", "YES", "--settings"]), .application)
-        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["--safe-mode"]), .application)
-        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: []), .application)
+        XCTAssertEqual(LaunchMode.resolve(arguments: ["-NSDocumentRevisionsDebugMode", "YES", "--settings"]), .application)
+        XCTAssertEqual(LaunchMode.resolve(arguments: ["--safe-mode"]), .application)
+        XCTAssertEqual(LaunchMode.resolve(arguments: []), .application)
     }
 
-    func testExplicitCLICommandsAndLegacyBinaryStillUseCLI() {
-        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["devices"]), .commandLine)
-        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["daemon", "--config", "example.json"]), .commandLine)
-        XCTAssertEqual(LaunchMode.resolve(executableName: "mksleep-rgb", arguments: []), .commandLine)
+    func testExplicitCLICommandsUseCLI() {
+        XCTAssertEqual(LaunchMode.resolve(arguments: ["devices"]), .commandLine)
+        XCTAssertEqual(LaunchMode.resolve(arguments: ["on", "--config", "example.json"]), .commandLine)
     }
 
     func testRuleMatchesButtonAndForegroundApplication() {
@@ -103,7 +102,7 @@ final class EngineTests: XCTestCase {
     @MainActor
     func testActionDispatchUsesPairedTaggedEventsInOrder() throws {
         var events: [CGEvent] = []
-        let executor = ActionEngine(post: { events.append($0) })
+        let executor = ActionEngine(post: { event, _ in events.append(event) }, canPost: { true })
         try executor.execute([.previousSpace, .nextSpace, .missionControl])
         XCTAssertEqual(events.map(\.type), [.keyDown, .keyUp, .keyDown, .keyUp, .keyDown, .keyUp])
         XCTAssertEqual(events.map { $0.getIntegerValueField(.keyboardEventKeycode) }, [123, 123, 124, 124, 126, 126])
@@ -112,9 +111,25 @@ final class EngineTests: XCTestCase {
     }
 
     @MainActor
+    func testSpaceShortcutEntersHIDStreamBeforeSessionHotkeyRouting() throws {
+        var destinations: [CGEventTapLocation] = []
+        let executor = ActionEngine(post: { _, destination in destinations.append(destination) }, canPost: { true })
+        try executor.execute([.previousSpace, .nextSpace])
+        XCTAssertEqual(destinations, Array(repeating: .cghidEventTap, count: 4))
+    }
+
+    @MainActor
+    func testDeniedPostingReportsErrorWithoutSendingPartialShortcut() {
+        var posted = false
+        let executor = ActionEngine(post: { _, _ in posted = true }, canPost: { false })
+        XCTAssertThrowsError(try executor.execute([.nextSpace]))
+        XCTAssertFalse(posted)
+    }
+
+    @MainActor
     func testCustomShortcutModifiersAndInvalidKey() throws {
         var events: [CGEvent] = []
-        let executor = ActionEngine(post: { events.append($0) })
+        let executor = ActionEngine(post: { event, _ in events.append(event) }, canPost: { true })
         try executor.execute([.shortcut(KeyboardShortcut(keyCode: 36, control: false, option: true, shift: true, command: true))])
         XCTAssertEqual(events.count, 2)
         XCTAssertEqual(events[0].flags, [.maskAlternate, .maskShift, .maskCommand])
@@ -123,30 +138,23 @@ final class EngineTests: XCTestCase {
 }
 
 final class ConfigurationTests: XCTestCase {
-    func testConfigurationRoundTripAndLegacyMigration() throws {
+    func testConfigurationRoundTripPreservesRGBAndRules() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let legacy = root.appendingPathComponent("legacy.json")
-        var rgb = Configuration()
-        rgb.mouse.mode = .static
-        rgb.mouse.color = "#123456"
-        let data = try JSONEncoder().encode(rgb)
-        try data.write(to: legacy)
-        let store = ConfigurationStore(directory: root.appendingPathComponent("new"), legacyURL: legacy)
+        let store = ConfigurationStore(directory: root)
         var config = try store.load()
-        XCTAssertEqual(config.rgb, rgb)
+        config.rgb.mouse.mode = .static
+        config.rgb.mouse.color = "#123456"
         config.remappingEnabled = true
         try store.save(config)
         XCTAssertEqual(try store.load(), config)
-        XCTAssertEqual(try Data(contentsOf: legacy), data)
     }
 
     func testCorruptConfigIsNotOverwrittenByLoad() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let store = ConfigurationStore(directory: root, legacyURL: root.appendingPathComponent("absent"))
+        let store = ConfigurationStore(directory: root)
         let bytes = Data("broken".utf8)
         try bytes.write(to: store.url)
         XCTAssertThrowsError(try store.load())
@@ -190,7 +198,7 @@ private final class MockRGBAdapter: RGBDeviceAdapter, @unchecked Sendable {
             configs.append(configuration)
             if state == .awake && wakeFailures > 0 {
                 wakeFailures -= 1
-                throw MKSleepError.deviceNotFound(name)
+                throw PeripheralKitError.deviceNotFound(name)
             }
         }
     }

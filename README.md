@@ -21,27 +21,25 @@ Il target di installazione dipende dall'app e usa una fase nativa **Copy Files**
 
 Il progetto Xcode è il flusso principale. `Package.swift` rimane soltanto per compatibilità con la CLI e con gli strumenti SwiftPM; non serve per build, test, installazione o archiviazione in Xcode.
 
-## Firma e vecchia richiesta di password
+## Firma e prima installazione
 
-La firma predefinita Xcode è **Sign to Run Locally** (`CODE_SIGN_IDENTITY = -`). Non usa chiavi private e non apre il portachiavi `MKSleepRGB`. Non occorre selezionare un Team per eseguire questa copia locale.
+La firma predefinita Xcode è **Sign to Run Locally** (`CODE_SIGN_IDENTITY = -`). Non usa chiavi private o portachiavi dedicati. Non occorre selezionare un Team per eseguire questa copia locale.
 
-Il vecchio installer creava un portachiavi dedicato con una password casuale, distinta dalla password dell'account macOS, e la salvava in `~/Library/Application Support/MKSleepRGB/signing/keychain-password`. La richiesta di password di `codesign` riguardava quel portachiavi. **Annulla la vecchia richiesta e usa gli schemi Xcode.** Il portachiavi e i suoi file non vengono modificati né eliminati dal nuovo flusso.
+La firma locale è ad hoc: macOS può richiedere di concedere di nuovo i permessi dopo una ricompilazione. Per una firma persistente o per distribuire l'app, configura il tuo Team e il certificato appropriato in **Signing & Capabilities**.
 
-La firma locale è ad hoc: macOS può richiedere di concedere di nuovo i permessi dopo una ricompilazione. Per una firma persistente o per distribuire l'app, configura il tuo Team e il certificato appropriato in **Signing & Capabilities**. Un archivio locale non è automaticamente notarizzato o pronto per la distribuzione pubblica.
+1. Chiudi le altre copie e usa **PeripheralKit Install → Run**.
+2. In **Generali**, autorizza **Monitoraggio input** per gli RGB e **Accessibilità** per le azioni mouse. Se richiesto, riapri l'app.
+3. Abilita **Rimappatura mouse** e, se desiderato, **Avvia al login**.
 
-## Prima installazione e migrazione RGB
+Le impostazioni RGB e mouse sono conservate in `~/Library/Application Support/PeripheralKit/settings.json`. Gli aggiornamenti non le sovrascrivono. Una configurazione corrotta viene segnalata senza sostituirla.
 
-1. Chiudi le copie di sviluppo o anteprima e usa **PeripheralKit Install → Run**.
-2. In **Generali**, autorizza **Monitoraggio input** per il controllo HID. Se macOS lo richiede, chiudi e riapri l'app installata.
-3. Premi **Migra da MKSleepRGB**. La migrazione crea un backup verificato del LaunchAgent, arresta il vecchio servizio e ne archivia la registrazione; il codice è Swift nativo e invoca `launchctl` direttamente, senza shell.
-4. Abilita **Avvia al login** se desiderato. Lo stato reale di `SMAppService`, compresa l'eventuale approvazione richiesta in Impostazioni, appare in Generali.
-5. Per le mappature, autorizza **Accessibilità** e abilita **Rimappatura mouse**.
+Per disinstallare: disabilita **Avvia al login**, esci dal menu e sposta l'app nel Cestino. La configurazione resta conservata.
 
-La migrazione è disponibile soltanto dalla copia installata in Applicazioni, dopo il permesso HID e con una configurazione valida. Fino ad allora il vecchio daemon resta responsabile degli RGB. Il JSON precedente e il portachiavi restano intatti. Se l'arresto fallisce, il LaunchAgent originale viene conservato.
+## Cambio Space
 
-Le impostazioni sono in `~/Library/Application Support/PeripheralKit/settings.json`. Al primo avvio, se il nuovo JSON non esiste, viene importato quello di `~/Library/Application Support/MKSleepRGB/config.json`. I backup di migrazione si trovano nella sottocartella `migration`. Una configurazione corrotta viene segnalata senza sovrascriverla.
+In **Mouse → Prova cambio Space**, i due pulsanti inviano la stessa azione usata dalle mappature laterali. Servono almeno due Space e le scorciatoie Ctrl+←/→ abilitate in **Impostazioni di Sistema → Tastiera → Abbreviazioni → Mission Control**. Al primo o ultimo Space non si torna automaticamente all'estremo opposto.
 
-Per disinstallare: disabilita **Avvia al login**, esci dal menu e sposta l'app nel Cestino. La configurazione resta conservata. Nessuno script è necessario.
+Le scorciatoie vengono inviate al flusso HID, prima della gestione della sessione. Il permesso di invio viene controllato prima di pubblicare eventi; se manca, appare un errore. La diagnostica distingue «Scorciatoia inviata» dalla notifica di sistema `spaceChanged`: l'invio da solo non dimostra che macOS abbia cambiato desktop.
 
 ## Funzionalità di questa versione
 
@@ -58,7 +56,7 @@ Le mappature sono **globali per tutti i mouse**: Quartz non espone l'identità U
 
 Profili per applicazione, isolamento per dispositivo, editor generico e OpenRGB restano nella roadmap. L'app non registra il testo digitato e non dipende da servizi di rete o driver kernel.
 
-## RGB e compatibilità CLI
+## RGB e strumenti CLI
 
 Sono preservati i report HID originali e i profili: static/rainbow/breathing/stream/radar/memory per la tastiera, spectrum/static/breathing per il mouse. Per cambiare colori ed effetti, chiudi l'app e modifica la sezione `rgb` del JSON; `config.example.json` documenta il formato RGB.
 
@@ -66,11 +64,11 @@ Il ripristino riguarda il **profilo configurato**, memorizzato prima dello stop,
 
 Le scritture HID sono fuori dal thread UI. La notifica `NSWorkspace.willSleepNotification` non garantisce il completamento USB prima della sospensione: lo spegnimento resta best effort, senza trattenere il Mac con un'assertion.
 
-Il binario del bundle conserva i comandi `devices`, `check`, `authorize`, `on`, `off`, `test` e `daemon`, con `--config` per il vecchio JSON. Non eseguire il daemon CLI insieme all'app installata. La modalità sicura si attiva aggiungendo `--safe-mode` in **Edit Scheme → Run → Arguments**; sospende rimappatura e cattura senza modificare le preferenze.
+Il binario del bundle offre i comandi `devices`, `check`, `authorize`, `on`, `off` e `test`. I comandi RGB usano le impostazioni attuali di PeripheralKit; `--config` accetta un profilo RGB esplicito. La modalità sicura si attiva aggiungendo `--safe-mode` in **Edit Scheme → Run → Arguments**; sospende rimappatura e cattura senza modificare le preferenze.
 
 ## Architettura e verifiche
 
-Il target XCTest è senza app host: compila gli stessi file di produzione escludendo gli entry point, senza avviare l'app né accedere alla configurazione reale. I test raccolgono gli eventi Quartz in memoria e simulano HID e launchctl. Le prove fisiche di pulsanti, sleep/wake e login restano separate.
+Il target XCTest è senza app host: compila gli stessi file di produzione escludendo gli entry point, senza avviare l'app né accedere alla configurazione reale. I test raccolgono gli eventi Quartz in memoria e simulano HID. Le prove fisiche di pulsanti, sleep/wake e login restano separate.
 
 - [Architettura e API](ARCHITECTURE.md)
 - [Perimetro MVP](MVP.md)

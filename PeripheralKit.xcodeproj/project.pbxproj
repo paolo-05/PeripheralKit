@@ -35,10 +35,6 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "D7DA2762C09B872E0FB131ED";
 		};
-		"DD6F4E2053CF12A5C9792E23" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "85AF6EEEEF6501182B637BE0";
-		};
 		"AA4B29A50E01D6998D20F79E" = {
 			"path" = "Sources/PeripheralKit/App/Diagnostics.swift";
 			"isa" = "PBXFileReference";
@@ -80,6 +76,13 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "6B4F4F6CB7001187C63A666C";
 		};
+		"53CD72D0C4818600CD5F232C" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"remoteGlobalIDString" = "6BE17FA9301155C530FEE6E3";
+			"remoteInfo" = "PeripheralKitLauncher";
+			"proxyType" = "1";
+		};
 		"6EF2D583C5BC27A58A297FF7" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "01E6B3FC96B899C6E935C146";
@@ -95,13 +98,6 @@
 		"8E7B784015D78C42850D3297" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "7D1043473D55BFA90E8530D3";
-		};
-		"F000212ABEC915D130E4F8A4" = {
-			"path" = "Tests/PeripheralKitTests/MigrationTests.swift";
-			"isa" = "PBXFileReference";
-			"name" = "MigrationTests.swift";
-			"lastKnownFileType" = "sourcecode.swift";
-			"sourceTree" = "SOURCE_ROOT";
 		};
 		"B47FD5A1EBC8AFC3E9A92B25" = {
 			"path" = "Sources/PeripheralKit/CLI.swift";
@@ -202,13 +198,6 @@
 				"PRODUCT_NAME" = "PeripheralKit";
 			};
 		};
-		"2DD83BF1ECFBE8DC2E205C55" = {
-			"path" = "Sources/PeripheralKit/System/SleepWatcher.swift";
-			"isa" = "PBXFileReference";
-			"name" = "SleepWatcher.swift";
-			"lastKnownFileType" = "sourcecode.swift";
-			"sourceTree" = "SOURCE_ROOT";
-		};
 		"2E707E3A00974FA81389B867" = {
 			"path" = "Tests/PeripheralKitTests/PacketTests.swift";
 			"isa" = "PBXFileReference";
@@ -250,18 +239,14 @@
 			"isa" = "PBXCopyFilesBuildPhase";
 			"runOnlyForDeploymentPostprocessing" = "0";
 			"dstPath" = "$(PERIPHERALKIT_INSTALL_DIR)";
-			"name" = "Install signed app";
 			"files" = (
 				"8E7B784015D78C42850D3297",
 			);
+			"name" = "Install signed app";
 		};
 		"0512CD0AFA839B41BDB9EBF0" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "2E707E3A00974FA81389B867";
-		};
-		"9F6206B4796E7595F9E46EA2" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "85AF6EEEEF6501182B637BE0";
 		};
 		"0E8A3AD980EC179856012B7E" = {
 			"productType" = "com.apple.product-type.application";
@@ -323,10 +308,10 @@
 			"baseConfigurationReference" = "5CC0AAF341BEA46B6290A18F";
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"SWIFT_VERSION" = "6.0";
-				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
-				"CLANG_ENABLE_MODULES" = "YES";
 				"SDKROOT" = "macosx";
+				"SWIFT_VERSION" = "6.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
 			};
 			"name" = "Release";
 		};
@@ -375,6 +360,14 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "3C3F6161D8FE3D1F52E8B80F";
 		};
+		"C3AA13D4B9D7726694FDDE01" = {
+			"isa" = "PBXGroup";
+			"name" = "Tools";
+			"children" = (
+				"21CB895632B87E3B8C2CE19C",
+			);
+			"sourceTree" = "<group>";
+		};
 		"3C3F6161D8FE3D1F52E8B80F" = {
 			"path" = "Sources/PeripheralKit/App/AppModel.swift";
 			"isa" = "PBXFileReference";
@@ -413,13 +406,6 @@
 				"F6144689B69304029DAC327F",
 			);
 		};
-		"FA844236EBD7B8354BFC6B4A" = {
-			"path" = "Sources/PeripheralKit/Hardware/HID.swift";
-			"isa" = "PBXFileReference";
-			"name" = "HID.swift";
-			"lastKnownFileType" = "sourcecode.swift";
-			"sourceTree" = "SOURCE_ROOT";
-		};
 		"01E6B3FC96B899C6E935C146" = {
 			"path" = "Sources/PeripheralKit/Hardware/Razer.swift";
 			"isa" = "PBXFileReference";
@@ -454,10 +440,15 @@
 				"093AF2F5424415FC3B37D069",
 				"2D001AD29883E3F1943DEEEE",
 				"983ECDC751581B7CF8A28A03",
-				"1A0D6799E7DC62E8178F455C",
-				"DD6F4E2053CF12A5C9792E23",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"FA844236EBD7B8354BFC6B4A" = {
+			"path" = "Sources/PeripheralKit/Hardware/HID.swift";
+			"isa" = "PBXFileReference";
+			"name" = "HID.swift";
+			"lastKnownFileType" = "sourcecode.swift";
+			"sourceTree" = "SOURCE_ROOT";
 		};
 		"959142A0CCAD6E24E38C8B8B" = {
 			"isa" = "PBXBuildFile";
@@ -478,9 +469,9 @@
 			"lastKnownFileType" = "sourcecode.swift";
 			"sourceTree" = "SOURCE_ROOT";
 		};
-		"A0B557EF849C2971D8B0C48C" = {
+		"B0D0F8222ED0DEF174D55835" = {
 			"isa" = "PBXBuildFile";
-			"fileRef" = "F000212ABEC915D130E4F8A4";
+			"fileRef" = "21CB895632B87E3B8C2CE19C";
 		};
 		"35E24D7DB79723D995C25567" = {
 			"isa" = "PBXBuildFile";
@@ -500,14 +491,34 @@
 			"lastKnownFileType" = "sourcecode.swift";
 			"sourceTree" = "SOURCE_ROOT";
 		};
+		"899210F98D69A8D1216341AD" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_STYLE" = "Manual";
+				"SKIP_INSTALL" = "YES";
+				"PRODUCT_NAME" = "PeripheralKitLauncher";
+			};
+		};
+		"8F2B81E5DE036475636EB2D0" = {
+			"isa" = "XCConfigurationList";
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+			"buildConfigurations" = (
+				"3561D0766007883D2B4C3127",
+				"899210F98D69A8D1216341AD",
+			);
+		};
 		"89E1FD6268CC0F221A2BE178" = {
 			"baseConfigurationReference" = "5CC0AAF341BEA46B6290A18F";
 			"isa" = "XCBuildConfiguration";
 			"buildSettings" = {
-				"SWIFT_VERSION" = "6.0";
-				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
-				"CLANG_ENABLE_MODULES" = "YES";
 				"SDKROOT" = "macosx";
+				"SWIFT_VERSION" = "6.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
 			};
 			"name" = "Debug";
 		};
@@ -531,6 +542,21 @@
 			"name" = "RGBSleepCoordinator.swift";
 			"lastKnownFileType" = "sourcecode.swift";
 			"sourceTree" = "SOURCE_ROOT";
+		};
+		"6BE17FA9301155C530FEE6E3" = {
+			"productType" = "com.apple.product-type.tool";
+			"productReference" = "D8A2B70E01170B5298236BE8";
+			"buildConfigurationList" = "8F2B81E5DE036475636EB2D0";
+			"productName" = "PeripheralKitLauncher";
+			"isa" = "PBXNativeTarget";
+			"buildPhases" = (
+				"61802A06D77D82A485A2E158",
+			);
+			"dependencies" = (
+			);
+			"name" = "PeripheralKitLauncher";
+			"buildRules" = (
+			);
 		};
 		"990E02821416FE2114D63E00" = {
 			"isa" = "PBXBuildFile";
@@ -586,12 +612,9 @@
 				"48B8CCAC5DEBFEF5B9EE2BE7",
 				"259EDF9FC22DD176FA28CB78",
 				"A8639FEDEB139757D2203E19",
-				"A56B2E62C7BD1FA07D7C1E11",
 				"C87F7EDEC1E2E9615C4490EE",
 				"68D834E272D46222BC5CF7C8",
 				"0512CD0AFA839B41BDB9EBF0",
-				"9F6206B4796E7595F9E46EA2",
-				"A0B557EF849C2971D8B0C48C",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -608,17 +631,17 @@
 			);
 			"sourceTree" = "<group>";
 		};
+		"21CB895632B87E3B8C2CE19C" = {
+			"path" = "Tools/LaunchInstalled.swift";
+			"isa" = "PBXFileReference";
+			"name" = "LaunchInstalled.swift";
+			"lastKnownFileType" = "sourcecode.swift";
+			"sourceTree" = "SOURCE_ROOT";
+		};
 		"63E60235566CAC91D4B7B37A" = {
 			"path" = "Sources/PeripheralKit/Input/InputEventEngine.swift";
 			"isa" = "PBXFileReference";
 			"name" = "InputEventEngine.swift";
-			"lastKnownFileType" = "sourcecode.swift";
-			"sourceTree" = "SOURCE_ROOT";
-		};
-		"85AF6EEEEF6501182B637BE0" = {
-			"path" = "Sources/PeripheralKit/System/LegacyServiceMigration.swift";
-			"isa" = "PBXFileReference";
-			"name" = "LegacyServiceMigration.swift";
 			"lastKnownFileType" = "sourcecode.swift";
 			"sourceTree" = "SOURCE_ROOT";
 		};
@@ -640,7 +663,6 @@
 			"children" = (
 				"E07DD91DC3730D7798BF7881",
 				"2E707E3A00974FA81389B867",
-				"F000212ABEC915D130E4F8A4",
 			);
 			"sourceTree" = "<group>";
 		};
@@ -672,6 +694,17 @@
 				"COPY_PHASE_STRIP" = "NO";
 			};
 		};
+		"3561D0766007883D2B4C3127" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_STYLE" = "Manual";
+				"SKIP_INSTALL" = "YES";
+				"PRODUCT_NAME" = "PeripheralKitLauncher";
+			};
+		};
 		"77386733C8D61361A8FDDFDF" = {
 			"productName" = "PeripheralKit Install";
 			"isa" = "PBXAggregateTarget";
@@ -685,6 +718,12 @@
 				"FE621882813D0CB01E1D239A",
 			);
 		};
+		"D8A2B70E01170B5298236BE8" = {
+			"path" = "PeripheralKitLauncher";
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "compiled.mach-o.executable";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
 		"C57128001CE614BF8549D6BB" = {
 			"isa" = "XCConfigurationList";
 			"defaultConfigurationIsVisible" = "0";
@@ -693,10 +732,6 @@
 				"7082CC0B6FC1282FCEABD07A",
 				"639A7CA24D39909E713B47F7",
 			);
-		};
-		"A56B2E62C7BD1FA07D7C1E11" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "2DD83BF1ECFBE8DC2E205C55";
 		};
 		"45598CFC513E7C3AD049EEFB" = {
 			"isa" = "PBXGroup";
@@ -725,9 +760,18 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "AA4B29A50E01D6998D20F79E";
 		};
-		"1A0D6799E7DC62E8178F455C" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "2DD83BF1ECFBE8DC2E205C55";
+		"61802A06D77D82A485A2E158" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"B0D0F8222ED0DEF174D55835",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"FE621882813D0CB01E1D239A" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "6BE17FA9301155C530FEE6E3";
+			"targetProxy" = "53CD72D0C4818600CD5F232C";
 		};
 		"862894B703A6DEDF96A9DD6C" = {
 			"isa" = "XCConfigurationList";
@@ -751,9 +795,7 @@
 			"children" = (
 				"A15AC6D5AA6626BC798C937F",
 				"6B4F4F6CB7001187C63A666C",
-				"2DD83BF1ECFBE8DC2E205C55",
 				"E4C4E782AE25984594C68782",
-				"85AF6EEEEF6501182B637BE0",
 			);
 			"sourceTree" = "<group>";
 		};
@@ -795,97 +837,6 @@
 			"name" = "ConfigurationStore.swift";
 			"lastKnownFileType" = "sourcecode.swift";
 			"sourceTree" = "SOURCE_ROOT";
-		};
-		"21CB895632B87E3B8C2CE19C" = {
-			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "sourcecode.swift";
-			"path" = "Tools/LaunchInstalled.swift";
-			"name" = "LaunchInstalled.swift";
-			"sourceTree" = "SOURCE_ROOT";
-		};
-		"C3AA13D4B9D7726694FDDE01" = {
-			"isa" = "PBXGroup";
-			"name" = "Tools";
-			"children" = (
-				"21CB895632B87E3B8C2CE19C",
-			);
-			"sourceTree" = "<group>";
-		};
-		"B0D0F8222ED0DEF174D55835" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "21CB895632B87E3B8C2CE19C";
-		};
-		"61802A06D77D82A485A2E158" = {
-			"isa" = "PBXSourcesBuildPhase";
-			"buildActionMask" = "2147483647";
-			"files" = (
-				"B0D0F8222ED0DEF174D55835",
-			);
-			"runOnlyForDeploymentPostprocessing" = "0";
-		};
-		"D8A2B70E01170B5298236BE8" = {
-			"isa" = "PBXFileReference";
-			"explicitFileType" = "compiled.mach-o.executable";
-			"path" = "PeripheralKitLauncher";
-			"sourceTree" = "BUILT_PRODUCTS_DIR";
-		};
-		"3561D0766007883D2B4C3127" = {
-			"isa" = "XCBuildConfiguration";
-			"name" = "Debug";
-			"buildSettings" = {
-				"PRODUCT_NAME" = "PeripheralKitLauncher";
-				"CODE_SIGN_IDENTITY" = "-";
-				"CODE_SIGN_STYLE" = "Manual";
-				"SKIP_INSTALL" = "YES";
-				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
-			};
-		};
-		"899210F98D69A8D1216341AD" = {
-			"isa" = "XCBuildConfiguration";
-			"name" = "Release";
-			"buildSettings" = {
-				"PRODUCT_NAME" = "PeripheralKitLauncher";
-				"CODE_SIGN_IDENTITY" = "-";
-				"CODE_SIGN_STYLE" = "Manual";
-				"SKIP_INSTALL" = "YES";
-				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
-			};
-		};
-		"8F2B81E5DE036475636EB2D0" = {
-			"isa" = "XCConfigurationList";
-			"buildConfigurations" = (
-				"3561D0766007883D2B4C3127",
-				"899210F98D69A8D1216341AD",
-			);
-			"defaultConfigurationIsVisible" = "0";
-			"defaultConfigurationName" = "Release";
-		};
-		"6BE17FA9301155C530FEE6E3" = {
-			"isa" = "PBXNativeTarget";
-			"name" = "PeripheralKitLauncher";
-			"productName" = "PeripheralKitLauncher";
-			"productType" = "com.apple.product-type.tool";
-			"productReference" = "D8A2B70E01170B5298236BE8";
-			"buildConfigurationList" = "8F2B81E5DE036475636EB2D0";
-			"buildPhases" = (
-				"61802A06D77D82A485A2E158",
-			);
-			"buildRules" = (
-			);
-			"dependencies" = (
-			);
-		};
-		"53CD72D0C4818600CD5F232C" = {
-			"isa" = "PBXContainerItemProxy";
-			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
-			"proxyType" = "1";
-			"remoteGlobalIDString" = "6BE17FA9301155C530FEE6E3";
-			"remoteInfo" = "PeripheralKitLauncher";
-		};
-		"FE621882813D0CB01E1D239A" = {
-			"isa" = "PBXTargetDependency";
-			"target" = "6BE17FA9301155C530FEE6E3";
-			"targetProxy" = "53CD72D0C4818600CD5F232C";
 		};
 	};
 	"rootObject" = "98F54143AB4E86B28C3AFEE0";
