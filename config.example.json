@@ -1,0 +1,17 @@
+{
+  "keyboard": {
+    "enabled": true,
+    "mode": "rainbow",
+    "color": "#FFFFFF",
+    "secondaryColor": "#FF0000",
+    "brightness": 100,
+    "speed": 100,
+    "direction": 0
+  },
+  "mouse": {
+    "enabled": true,
+    "mode": "spectrum",
+    "color": "#00FF00"
+  },
+  "wakeDelaySeconds": 1.0
+}

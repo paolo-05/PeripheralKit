@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>it</string>
+    <key>CFBundleExecutable</key>
+    <string>mksleep-rgb</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.local.mksleep-rgb</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>MKSleepRGB</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.2</string>
+    <key>CFBundleVersion</key>
+    <string>3</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Utility locale per Drevo Tyrfing V2 e Razer DeathAdder V2</string>
+    <key>NSInputMonitoringUsageDescription</key>
+    <string>MKSleepRGB usa l'accesso HID esclusivamente per spegnere e ripristinare l'illuminazione delle periferiche USB.</string>
+</dict>
+</plist>
