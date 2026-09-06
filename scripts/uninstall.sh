@@ -1,10 +1,11 @@
 #!/bin/zsh
 set -euo pipefail
-
-agent_file="$HOME/Library/LaunchAgents/com.local.mksleep-rgb.plist"
-launchctl bootout "gui/$(id -u)/com.local.mksleep-rgb" 2>/dev/null || true
-if [[ -f "$agent_file" ]]; then
-  mv "$agent_file" "$HOME/.Trash/com.local.mksleep-rgb.plist"
+app_bundle="$HOME/Applications/PeripheralKit.app"
+if [[ -x "$app_bundle/Contents/MacOS/PeripheralKit" ]]; then
+  "$app_bundle/Contents/MacOS/PeripheralKit" unregister-login
+  if pgrep -f "^$app_bundle/Contents/MacOS/PeripheralKit( |$)" >/dev/null; then
+    osascript -e 'tell application id "com.local.peripheralkit" to quit'
+  fi
 fi
-
-print "LaunchAgent rimosso. Configurazione e binario restano in ~/Library/Application Support/MKSleepRGB."
+print 'Avvio al login disabilitato. App e configurazione conservate.'
+print 'Il vecchio LaunchAgent MKSleepRGB non viene riattivato automaticamente.'

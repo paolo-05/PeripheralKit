@@ -16,6 +16,7 @@ final class AppModel: ObservableObject {
             configurationChanged?()
         }
     }
+    @Published var legacyRGBWarning = false
     @Published var errorMessage: String?
     @Published var accessibilityGranted = false
     @Published var hidGranted = false
@@ -36,7 +37,10 @@ final class AppModel: ObservableObject {
 
     init(safeMode: Bool) {
         self.safeMode = safeMode
-        do { configuration = try store.load() }
+        do {
+            configuration = try store.load()
+            if !FileManager.default.fileExists(atPath: store.url.path) { try store.save(configuration) }
+        }
         catch {
             configurationReadFailed = true
             configuration.rgbEnabled = false

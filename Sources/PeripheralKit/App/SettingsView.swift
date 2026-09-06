@@ -35,6 +35,10 @@ struct SettingsView: View {
                     Text((page ?? .general).rawValue).font(.title2.bold())
                     if model.safeMode { Label("Modalità sicura: rimappatura sospesa", systemImage: "shield").foregroundStyle(.secondary) }
                 }.padding(24)
+                if model.legacyRGBWarning {
+                    Label("RGB gestito da MKSleepRGB. Completa l’installazione di PeripheralKit per migrare il servizio.", systemImage: "info.circle")
+                        .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24).padding(.bottom, 12)
+                }
                 if let error = model.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
                         .textSelection(.enabled).padding(.horizontal, 24).padding(.bottom, 12)

@@ -4,8 +4,12 @@ import SwiftUI
 @main
 struct PeripheralKitMain {
     @MainActor static func main() {
+        if URL(fileURLWithPath: CommandLine.arguments[0]).lastPathComponent == "mksleep-rgb" {
+            runCLI()
+            return
+        }
         let arguments = Array(CommandLine.arguments.dropFirst())
-        if let first = arguments.first, !["--safe-mode", "--settings"].contains(first), !first.hasPrefix("-psn_") {
+        if let first = arguments.first, !["--safe-mode", "--settings", "--enable-login"].contains(first), !first.hasPrefix("-psn_") {
             runCLI()
             return
         }
@@ -18,10 +22,11 @@ struct PeripheralKitMain {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate {
     let model: AppModel
     private var statusItem: NSStatusItem?
     private var window: NSWindow?
+    private var runtime: AppRuntime?
 
     init(safeMode: Bool) { model = AppModel(safeMode: safeMode) }
 
@@ -32,12 +37,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSApp.terminate(nil)
             return
         }
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu(title: "PeripheralKit")
+        let preferences = NSMenuItem(title: "Impostazioni…", action: #selector(showSettings), keyEquivalent: ",")
+        preferences.target = self
+        appMenu.addItem(preferences)
+        appMenu.addItem(.separator())
+        appMenu.addItem(NSMenuItem(title: "Esci da PeripheralKit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenuItem.submenu = appMenu
+        NSApp.mainMenu = mainMenu
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.button?.image = NSImage(systemSymbolName: "computermouse", accessibilityDescription: "PeripheralKit")
         let menu = NSMenu()
         menu.delegate = self
         statusItem?.menu = menu
+        runtime = AppRuntime(model: model)
+        runtime?.start()
         model.startRefreshing()
+        if CommandLine.arguments.contains("--enable-login") { model.setLogin(true) }
         if !UserDefaults.standard.bool(forKey: "hasOpenedSettings") || CommandLine.arguments.contains("--settings") || model.safeMode { showSettings() }
     }
 
@@ -74,6 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             window.setContentSize(NSSize(width: 850, height: 640))
             window.minSize = NSSize(width: 740, height: 540)
             window.isReleasedWhenClosed = false
+            window.delegate = self
             window.center()
             self.window = window
         }
@@ -83,5 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showSettings(); return true }
+    func windowWillClose(_ notification: Notification) { model.cancelRecording() }
+    func applicationWillTerminate(_ notification: Notification) { runtime?.stop() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }

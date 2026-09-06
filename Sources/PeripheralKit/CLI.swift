@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import ServiceManagement
 
 private struct Arguments {
     let command: String
@@ -112,6 +113,10 @@ do {
         exit(0)
     }
 
+    if arguments.command == "unregister-login" {
+        try SMAppService.mainApp.unregister()
+        return
+    }
     if arguments.command == "devices" {
         try printDevices()
         exit(0)
