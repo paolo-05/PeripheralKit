@@ -1,11 +1,11 @@
 import Foundation
 
-enum PowerState: String {
+enum PowerState: String, Sendable {
     case awake
     case sleeping
 }
 
-struct ApplyResult {
+struct ApplyResult: Sendable {
     var successes: [String] = []
     var failures: [String] = []
 

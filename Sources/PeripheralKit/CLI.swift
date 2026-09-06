@@ -103,6 +103,8 @@ private func printResult(_ result: ApplyResult, state: PowerState) -> Int32 {
     return result.succeeded ? 0 : 1
 }
 
+@MainActor
+func runCLI() {
 do {
     let arguments = try Arguments(CommandLine.arguments)
     if ["help", "--help", "-h"].contains(arguments.command) {
@@ -153,4 +155,6 @@ do {
 } catch {
     Log.error(error.localizedDescription)
     exit(1)
+}
+
 }

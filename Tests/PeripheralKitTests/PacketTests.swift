@@ -1,5 +1,5 @@
 import XCTest
-@testable import MKSleepRGB
+@testable import PeripheralKit
 
 final class PacketTests: XCTestCase {
     func testRazerFirmwarePacket() {

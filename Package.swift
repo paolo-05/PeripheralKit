@@ -3,13 +3,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "MKSleepRGB",
-    platforms: [.macOS(.v13)],
+    name: "PeripheralKit",
+    platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "mksleep-rgb", targets: ["MKSleepRGB"]),
+        .executable(name: "PeripheralKit", targets: ["PeripheralKit"]),
+        .executable(name: "mksleep-rgb", targets: ["PeripheralKit"]),
     ],
     targets: [
-        .executableTarget(name: "MKSleepRGB"),
-        .testTarget(name: "MKSleepRGBTests", dependencies: ["MKSleepRGB"]),
+        .executableTarget(name: "PeripheralKit"),
+        .testTarget(name: "PeripheralKitTests", dependencies: ["PeripheralKit"]),
     ]
 )

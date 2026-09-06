@@ -1,3 +1,11 @@
 .build/
 .openrgb-config/
 OpenRGB.json
+
+.DS_Store
+.swiftpm/
+.vscode/
+DerivedData/
+dist/
+*.xcuserstate
+xcuserdata/

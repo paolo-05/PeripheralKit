@@ -1,6 +1,6 @@
 import Foundation
 
-struct Configuration: Codable, Equatable {
+struct Configuration: Codable, Equatable, Sendable {
     var keyboard = KeyboardConfiguration()
     var mouse = MouseConfiguration()
     var wakeDelaySeconds = 1.0
@@ -12,8 +12,8 @@ struct Configuration: Codable, Equatable {
     }
 }
 
-struct KeyboardConfiguration: Codable, Equatable {
-    enum Mode: String, Codable, CaseIterable {
+struct KeyboardConfiguration: Codable, Equatable, Sendable {
+    enum Mode: String, Codable, CaseIterable, Sendable {
         case `static`
         case rainbow
         case breathing
@@ -31,8 +31,8 @@ struct KeyboardConfiguration: Codable, Equatable {
     var direction = 0
 }
 
-struct MouseConfiguration: Codable, Equatable {
-    enum Mode: String, Codable, CaseIterable {
+struct MouseConfiguration: Codable, Equatable, Sendable {
+    enum Mode: String, Codable, CaseIterable, Sendable {
         case spectrum
         case `static`
         case breathing
