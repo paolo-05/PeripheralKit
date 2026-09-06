@@ -4,12 +4,8 @@ import SwiftUI
 @main
 struct PeripheralKitMain {
     @MainActor static func main() {
-        if URL(fileURLWithPath: CommandLine.arguments[0]).lastPathComponent == "mksleep-rgb" {
-            runCLI()
-            return
-        }
         let arguments = Array(CommandLine.arguments.dropFirst())
-        if let first = arguments.first, !["--safe-mode", "--settings", "--enable-login"].contains(first), !first.hasPrefix("-psn_") {
+        if LaunchMode.resolve(executableName: URL(fileURLWithPath: CommandLine.arguments[0]).lastPathComponent, arguments: arguments) == .commandLine {
             runCLI()
             return
         }

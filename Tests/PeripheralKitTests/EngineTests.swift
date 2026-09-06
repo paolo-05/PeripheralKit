@@ -1,8 +1,22 @@
 import XCTest
 import CoreGraphics
+#if SWIFT_PACKAGE
 @testable import PeripheralKit
+#endif
 
 final class EngineTests: XCTestCase {
+    func testXcodeAndCocoaArgumentsLaunchTheApp() {
+        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["-NSDocumentRevisionsDebugMode", "YES", "--settings"]), .application)
+        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["--safe-mode"]), .application)
+        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: []), .application)
+    }
+
+    func testExplicitCLICommandsAndLegacyBinaryStillUseCLI() {
+        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["devices"]), .commandLine)
+        XCTAssertEqual(LaunchMode.resolve(executableName: "PeripheralKit", arguments: ["daemon", "--config", "example.json"]), .commandLine)
+        XCTAssertEqual(LaunchMode.resolve(executableName: "mksleep-rgb", arguments: []), .commandLine)
+    }
+
     func testRuleMatchesButtonAndForegroundApplication() {
         let rule = Rule(name: "Safari", trigger: .mouseButton(4), conditions: [.application("com.apple.Safari")], actions: [.previousSpace])
         let engine = RuleEngine()

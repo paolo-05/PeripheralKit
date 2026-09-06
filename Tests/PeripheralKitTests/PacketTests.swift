@@ -1,5 +1,7 @@
 import XCTest
+#if SWIFT_PACKAGE
 @testable import PeripheralKit
+#endif
 
 final class PacketTests: XCTestCase {
     func testRazerFirmwarePacket() {

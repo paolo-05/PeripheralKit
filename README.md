@@ -1,94 +1,81 @@
 # PeripheralKit
 
-Utility nativa per macOS 14+: pulsanti del mouse, scorciatoie e automazioni RGB per le periferiche. Evoluzione di MKSleepRGB, con app nella barra dei menu e preferenze SwiftUI. Nessuna dipendenza esterna o servizio di rete.
+Utility nativa macOS 14+ per rimappare i pulsanti aggiuntivi del mouse e gestire gli RGB di Drevo Tyrfing V2 e Razer DeathAdder V2 durante stop e risveglio.
 
-## Questa versione
+## Sviluppo, test e installazione in Xcode
 
+Apri **PeripheralKit.xcodeproj**, scegli **My Mac** come destinazione e usa uno dei due schemi condivisi:
+
+| Schema | Comando Xcode | Risultato |
+| --- | --- | --- |
+| PeripheralKit | ⌘B, Build | Compila l'app Debug in DerivedData |
+| PeripheralKit | ⌘R, Run | Avvia l'app di sviluppo con le impostazioni aperte |
+| PeripheralKit | ⌘U, Test | Esegue i test XCTest, senza avviare automazioni o inviare input |
+| PeripheralKit | Product → Archive | Crea l'archivio Release in Organizer |
+| PeripheralKit Install | ⌘B, Build | Compila Release e installa in `~/Applications/PeripheralKit.app` |
+| PeripheralKit Install | ⌘R, Run | Installa e avvia la copia in Applicazioni, senza debugger |
+
+**Chiudi le altre copie di PeripheralKit prima di installare o avviare uno schema diverso.** L'app impedisce istanze simultanee; una copia di sviluppo già aperta potrebbe impedire l'avvio di quella installata.
+
+Il target di installazione dipende dall'app e usa una fase nativa **Copy Files**, eseguita dopo la firma. Non contiene Run Script, pre/post-action shell né comandi di firma personalizzati. Run usa un piccolo launcher Swift compilato da Xcode, che apre la copia installata tramite NSWorkspace. Il launcher legge dal bundle la destinazione risolta da Xcode; gli schemi non contengono percorsi utente assoluti né richiedono espansione shell. La cartella di destinazione è definita in `Configuration/Local.xcconfig`. Il prodotto compilato resta in DerivedData: pulire la build non cancella l'app installata. Ricostruire il target di installazione aggiorna l'app; i dati in Application Support restano separati.
+
+Il progetto Xcode è il flusso principale. `Package.swift` rimane soltanto per compatibilità con la CLI e con gli strumenti SwiftPM; non serve per build, test, installazione o archiviazione in Xcode.
+
+## Firma e vecchia richiesta di password
+
+La firma predefinita Xcode è **Sign to Run Locally** (`CODE_SIGN_IDENTITY = -`). Non usa chiavi private e non apre il portachiavi `MKSleepRGB`. Non occorre selezionare un Team per eseguire questa copia locale.
+
+Il vecchio installer creava un portachiavi dedicato con una password casuale, distinta dalla password dell'account macOS, e la salvava in `~/Library/Application Support/MKSleepRGB/signing/keychain-password`. La richiesta di password di `codesign` riguardava quel portachiavi. **Annulla la vecchia richiesta e usa gli schemi Xcode.** Il portachiavi e i suoi file non vengono modificati né eliminati dal nuovo flusso.
+
+La firma locale è ad hoc: macOS può richiedere di concedere di nuovo i permessi dopo una ricompilazione. Per una firma persistente o per distribuire l'app, configura il tuo Team e il certificato appropriato in **Signing & Capabilities**. Un archivio locale non è automaticamente notarizzato o pronto per la distribuzione pubblica.
+
+## Prima installazione e migrazione RGB
+
+1. Chiudi le copie di sviluppo o anteprima e usa **PeripheralKit Install → Run**.
+2. In **Generali**, autorizza **Monitoraggio input** per il controllo HID. Se macOS lo richiede, chiudi e riapri l'app installata.
+3. Premi **Migra da MKSleepRGB**. La migrazione crea un backup verificato del LaunchAgent, arresta il vecchio servizio e ne archivia la registrazione; il codice è Swift nativo e invoca `launchctl` direttamente, senza shell.
+4. Abilita **Avvia al login** se desiderato. Lo stato reale di `SMAppService`, compresa l'eventuale approvazione richiesta in Impostazioni, appare in Generali.
+5. Per le mappature, autorizza **Accessibilità** e abilita **Rimappatura mouse**.
+
+La migrazione è disponibile soltanto dalla copia installata in Applicazioni, dopo il permesso HID e con una configurazione valida. Fino ad allora il vecchio daemon resta responsabile degli RGB. Il JSON precedente e il portachiavi restano intatti. Se l'arresto fallisce, il LaunchAgent originale viene conservato.
+
+Le impostazioni sono in `~/Library/Application Support/PeripheralKit/settings.json`. Al primo avvio, se il nuovo JSON non esiste, viene importato quello di `~/Library/Application Support/MKSleepRGB/config.json`. I backup di migrazione si trovano nella sottocartella `migration`. Una configurazione corrotta viene segnalata senza sovrascriverla.
+
+Per disinstallare: disabilita **Avvia al login**, esci dal menu e sposta l'app nel Cestino. La configurazione resta conservata. Nessuno script è necessario.
+
+## Funzionalità di questa versione
+
+- App nella barra menu, impostazioni native, stato permessi e diagnostica limitata.
 - Pulsante 4 → Space precedente, pulsante 5 → Space successivo.
-- Mission Control e scorciatoie personalizzate tramite codice tasto e modificatori.
-- Cattura di un pulsante extra, annullabile e con timeout di 15 secondi.
-- Consumo o passaggio dell'evento originale, regole disattivabili e interruttore globale.
-- Inventario HID aggiornato ogni tre secondi, permessi e diagnostica.
+- Mission Control e scorciatoie personalizzate con codice tasto/modificatori.
+- Cattura dei pulsanti aggiuntivi annullabile, con timeout di 15 secondi.
+- Consumo/passaggio evento originale, regole disattivabili e interruttore globale.
+- Inventario HID con aggiornamento ogni tre secondi.
 - RGB diretto Drevo Tyrfing V2 (`0416:a0f8`) e Razer DeathAdder V2 (`1532:0084`).
 - Stop sistema e schermi separati; ripristino con attesa e cinque tentativi cancellabili.
-- Avvio al login con `SMAppService`.
 
-Le mappature sono **globali per tutti i mouse**. Quartz non espone un'identità USB affidabile del dispositivo sorgente; l'inventario HID non viene usato per attribuire arbitrariamente i click. Il primo incremento implementa la shell e l'input del brief, mantenendo il controllo RGB originale. Profili per applicazione, isolamento per dispositivo, editor generico e OpenRGB restano nella roadmap.
+Le mappature sono **globali per tutti i mouse**: Quartz non espone l'identità USB affidabile del dispositivo sorgente. Per gli Spaces, abilita Ctrl+←/→ nelle abbreviazioni Mission Control di macOS; Mission Control usa Ctrl+↑.
 
-## Build e avvio
+Profili per applicazione, isolamento per dispositivo, editor generico e OpenRGB restano nella roadmap. L'app non registra il testo digitato e non dipende da servizi di rete o driver kernel.
 
-```sh
-./scripts/build.sh
-open dist/PeripheralKit.app
-```
+## RGB e compatibilità CLI
 
-Il bundle è generato in `dist/PeripheralKit.app`. Si può anche aprire `PeripheralKit.xcodeproj` in Xcode e avviare il target PeripheralKit. Swift Package Manager resta disponibile per CLI e test. Non serve XcodeGen.
+Sono preservati i report HID originali e i profili: static/rainbow/breathing/stream/radar/memory per la tastiera, spectrum/static/breathing per il mouse. Per cambiare colori ed effetti, chiudi l'app e modifica la sezione `rgb` del JSON; `config.example.json` documenta il formato RGB.
 
-Al primo avvio l'app mostra le preferenze; in seguito resta nella barra menu. **La rimappatura è inizialmente disabilitata.** Autorizza Accessibilità e attivala quando vuoi usare le assegnazioni. Il permesso Monitoraggio input serve all'accesso HID RGB. Le richieste partono soltanto dai pulsanti dedicati, non ripetutamente all'avvio.
+Il ripristino riguarda il **profilo configurato**, memorizzato prima dello stop, non un effetto impostato esternamente nel firmware. La selezione RGB è per modello. Dopo l'attesa configurata, il ripristino ritenta a intervalli 0, 250 ms, 500 ms, 1 s e 2 s solo sugli adapter falliti. Un nuovo stop cancella il ripristino precedente.
 
-Per gli Spaces, abilita Ctrl+←/→ nelle abbreviazioni Mission Control di macOS. L'azione Mission Control usa Ctrl+↑. Le abbreviazioni possono essere personalizzate nelle assegnazioni.
+Le scritture HID sono fuori dal thread UI. La notifica `NSWorkspace.willSleepNotification` non garantisce il completamento USB prima della sospensione: lo spegnimento resta best effort, senza trattenere il Mac con un'assertion.
 
-## Installazione e migrazione
+Il binario del bundle conserva i comandi `devices`, `check`, `authorize`, `on`, `off`, `test` e `daemon`, con `--config` per il vecchio JSON. Non eseguire il daemon CLI insieme all'app installata. La modalità sicura si attiva aggiungendo `--safe-mode` in **Edit Scheme → Run → Arguments**; sospende rimappatura e cattura senza modificare le preferenze.
 
-```sh
-./scripts/install.sh
-```
+## Architettura e verifiche
 
-Lo script compila e verifica la firma prima della migrazione, installa `~/Applications/PeripheralKit.app`, arresta il vecchio LaunchAgent e ne sposta il plist in `~/Library/Application Support/PeripheralKit/migration/`. Conserva l'app precedente, il JSON RGB e l'identità di firma locale. Un'eventuale versione precedente di PeripheralKit viene archiviata nella stessa cartella migration. L'app registra poi l'avvio al login: lo stato effettivo, compresa l'eventuale approvazione richiesta da macOS, appare in Generali.
+Il target XCTest è senza app host: compila gli stessi file di produzione escludendo gli entry point, senza avviare l'app né accedere alla configurazione reale. I test raccolgono gli eventi Quartz in memoria e simulano HID e launchctl. Le prove fisiche di pulsanti, sleep/wake e login restano separate.
 
-L'app importa `~/Library/Application Support/MKSleepRGB/config.json` soltanto se non esiste ancora `~/Library/Application Support/PeripheralKit/settings.json`. Il vecchio JSON non viene modificato. Una configurazione corrotta viene segnalata e non sovrascritta; correggila e riapri l'app.
-
-**Durante una semplice anteprima del bundle, se il vecchio plist è ancora installato, PeripheralKit sospende il proprio controllo RGB.** MKSleepRGB continua così a gestire le luci fino alla migrazione.
-
-L'installer riusa l'identità locale di firma MKSleepRGB/PeripheralKit se già disponibile. Puoi specificarne una con `CODESIGN_IDENTITY`. Non crea nuovi certificati né modifica la lista dei portachiavi. Senza identità disponibile usa la firma ad hoc, che può richiedere di riconcedere i permessi dopo una ricompilazione. Il nuovo bundle ID `com.local.peripheralkit` richiede comunque autorizzazioni proprie: quelle del vecchio daemon non vengono trasferite.
-
-Per disabilitare l'avvio al login e chiudere l'app conservandone i dati:
-
-```sh
-./scripts/uninstall.sh
-```
-
-## RGB: comportamento preservato e limiti
-
-Il controllo usa gli stessi report HID già presenti nel daemon, isolati dietro `RGBDeviceAdapter`. La tastiera continua a supportare static, rainbow, breathing, stream, radar e memory; il mouse spectrum, static e breathing. Per modificare colori/effetti chiudi l'app e modifica la sezione `rgb` di `settings.json`; il formato interno è quello di `config.example.json`.
-
-Il ripristino riguarda il **profilo configurato**, memorizzato prima dello stop. Non viene letto lo stato arbitrario del firmware o di altre app. La selezione RGB è per modello (Drevo/Razer), non per singolo esemplare dello stesso modello.
-
-Stop schermi e stop sistema vengono combinati: un risveglio del sistema non accende le luci se gli schermi restano spenti e la relativa opzione è attiva. Dopo il ritardo configurato, vengono effettuati tentativi a intervalli di 0, 250 ms, 500 ms, 1 s e 2 s, riprovando soltanto gli adapter falliti. Un nuovo stop cancella il ripristino in corso.
-
-Le scritture HID avvengono fuori dal thread UI. `NSWorkspace.willSleepNotification` offre una notifica, non una garanzia che USB completi prima della sospensione: come nel daemon, il comando di spegnimento resta best effort. L'app non trattiene il Mac con un'assertion di alimentazione.
-
-## CLI compatibile
-
-```sh
-.build/release/mksleep-rgb devices
-.build/release/mksleep-rgb check
-.build/release/mksleep-rgb test --config config.example.json
-.build/release/mksleep-rgb daemon --config config.example.json
-```
-
-Sono preservati anche `on`, `off` e `authorize`. Non eseguire il daemon contemporaneamente alla nuova app installata. `test` modifica realmente le luci per due secondi; `devices` è una lettura dell'inventario. La CLI `daemon` conserva la logica precedente; i nuovi retry e le opzioni UI appartengono all'app.
-
-Modalità sicura, a PeripheralKit già chiuso:
-
-```sh
-open -n ~/Applications/PeripheralKit.app --args --safe-mode
-```
-
-La modalità sicura non modifica le preferenze salvate e impedisce rimappatura e registrazione dei pulsanti. Il controllo RGB resta indipendente.
-
-## Test e documentazione
-
-```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-sandbox
-```
-
-25 test coprono pacchetti originali, matcher, identità, consumo down/up, cattura, azioni, persistenza, migrazione, cache RGB e retry/cancellazione. I test delle azioni costruiscono eventi Quartz ma li raccolgono in memoria, senza inviarli: richiedono una sessione grafica con accesso al WindowServer e possono fallire in un sandbox di esecuzione restrittivo.
-
-- [Architettura, API, permessi e rischi](ARCHITECTURE.md)
-- [Perimetro MVP e accettazione fisica](MVP.md)
+- [Architettura e API](ARCHITECTURE.md)
+- [Perimetro MVP](MVP.md)
 - [Verifiche eseguite](VERIFICATION.md)
+- [Apple: schemi Xcode](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project)
+- [Apple: firma del codice](https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html)
 
-## Riferimenti dei protocolli
-
-I pacchetti del daemon sono stati conservati, non riscritti da codice GPL. I riferimenti storici sono [RazerControl, MIT](https://github.com/pol-cova/RazerControl), [OpenRazer](https://github.com/openrazer/openrazer), [dtv2](https://github.com/cobacdavid/dtv2), [DrevoTyrfing](https://github.com/dennisblokland/DrevoTyrfing) e [HIDAPI](https://github.com/libusb/hidapi). Prima di una distribuzione pubblica resta da completare una verifica delle attribuzioni e delle licenze dei riferimenti originali.
+I pacchetti originali sono preservati. Riferimenti storici: [RazerControl, MIT](https://github.com/pol-cova/RazerControl), [OpenRazer](https://github.com/openrazer/openrazer), [dtv2](https://github.com/cobacdavid/dtv2), [DrevoTyrfing](https://github.com/dennisblokland/DrevoTyrfing) e [HIDAPI](https://github.com/libusb/hidapi). Le attribuzioni dei riferimenti originali vanno completate prima di una distribuzione pubblica.

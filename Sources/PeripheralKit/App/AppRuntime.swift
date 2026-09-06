@@ -66,7 +66,7 @@ final class AppRuntime {
         system.start()
         updateConfiguration()
         if legacyAgentPresent {
-            model.diagnostics.record("RGB sospeso: è ancora installato il LaunchAgent MKSleepRGB. Completa la migrazione con l'installer di PeripheralKit.", error: true)
+            model.diagnostics.record("RGB sospeso: è ancora installato il LaunchAgent MKSleepRGB. Usa il pulsante Migra da MKSleepRGB nell'app installata.", error: true)
             model.legacyRGBWarning = true
         }
     }

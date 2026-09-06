@@ -2,29 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>it</string>
-    <key>CFBundleExecutable</key>
-    <string>PeripheralKit</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.local.peripheralkit</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>PeripheralKit</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.1</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSHumanReadableCopyright</key>
-    <string>Utility locale per Drevo Tyrfing V2 e Razer DeathAdder V2</string>
-    <key>NSInputMonitoringUsageDescription</key>
-    <string>PeripheralKit usa l'accesso HID esclusivamente per spegnere e ripristinare l'illuminazione delle periferiche USB.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>it</string>
+	<key>CFBundleExecutable</key>
+	<string>PeripheralKit</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.local.peripheralkit</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>PeripheralKit</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Utility locale per Drevo Tyrfing V2 e Razer DeathAdder V2</string>
+	<key>NSInputMonitoringUsageDescription</key>
+	<string>PeripheralKit usa l'accesso HID esclusivamente per spegnere e ripristinare l'illuminazione delle periferiche USB.</string>
+	<key>PeripheralKitInstallDirectory</key>
+	<string>$(PERIPHERALKIT_INSTALL_DIR)</string>
 </dict>
 </plist>

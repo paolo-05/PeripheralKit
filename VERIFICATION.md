@@ -30,4 +30,17 @@ Avviato il bundle .app e verificata l'interfaccia nativa via accessibility tree 
 - Stop/wake reale del Mac, display sleep e re-enumerazione lenta delle periferiche.
 - Installazione/migrazione e avvio al successivo login.
 
-Non è stato sospeso il Mac né inviato input sintetico globale durante i test. Il vecchio servizio RGB è conservato fino all'esecuzione dell'installer.
+Non è stato sospeso il Mac né inviato input sintetico globale durante i test. Il vecchio servizio RGB è conservato fino alla migrazione avviata dall'utente nell'app installata.
+
+## Flusso Xcode nativo (aggiornamento)
+
+- Rimossi build.sh, install.sh, uninstall.sh e la configurazione del certificato dedicato.
+- `xcodebuild test`, schema PeripheralKit, destinazione My Mac: 31 test passati, inclusi quattro test di migrazione con servizio simulato e due regressioni per gli argomenti di avvio Xcode/Cocoa.
+- Schema PeripheralKit Install: Copy Files verificato prima in una cartella temporanea e poi in `~/Applications`.
+- App installata come binario universale arm64/x86_64, firma Xcode «Sign to Run Locally», verificata con codesign.
+- Nessuna richiesta al portachiavi MKSleepRGB durante build e installazione.
+- La migrazione reale del vecchio servizio e le autorizzazioni TCC restano azioni dell'utente nell'app.
+
+- Verifica nella UI di Xcode: schema PeripheralKit Install, ⌘R, launcher terminato con codice 0; processo avviato da `~/Applications/PeripheralKit.app` con `--settings`.
+- Finestra installata verificata: sidebar completa, richiesta dei permessi e migrazione disabilitata fino a Monitoraggio input.
+- Archive Release aggiornato riuscito.

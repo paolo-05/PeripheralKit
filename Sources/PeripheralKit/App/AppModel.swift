@@ -17,6 +17,7 @@ final class AppModel: ObservableObject {
         }
     }
     @Published var legacyRGBWarning = false
+    @Published var migratingLegacyService = false
     @Published var errorMessage: String?
     @Published var accessibilityGranted = false
     @Published var hidGranted = false
@@ -74,7 +75,7 @@ final class AppModel: ObservableObject {
         switch SMAppService.mainApp.status {
         case .enabled: loginStatus = "Attivo"
         case .requiresApproval: loginStatus = "Da approvare nelle Impostazioni di Sistema"
-        case .notFound: loginStatus = "Installa l'app in Applicazioni"
+        case .notFound: loginStatus = isInstalled ? "Elemento di login non trovato da macOS" : "Installa l'app in Applicazioni"
         default: loginStatus = "Disattivato"
         }
         if changed { configurationChanged?() }
@@ -111,6 +112,33 @@ final class AppModel: ObservableObject {
             for device in devices where !after.contains(device.id) { diagnostics.record("HID scollegato: \(device.productName)") }
             if devices != found { devices = found }
         } catch { report(error) }
+    }
+
+    var isInstalled: Bool {
+        let parent = Bundle.main.bundleURL.deletingLastPathComponent().standardizedFileURL
+        return parent == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications").standardizedFileURL
+            || parent == URL(fileURLWithPath: "/Applications", isDirectory: true).standardizedFileURL
+    }
+
+    var canMigrateLegacyService: Bool { isInstalled && hidGranted && !configurationReadFailed }
+
+    func migrateLegacyService() {
+        guard !migratingLegacyService, canMigrateLegacyService else { return }
+        migratingLegacyService = true
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.migratingLegacyService = false }
+            do {
+                let backup = try await Task.detached(priority: .utility) {
+                    try LegacyServiceMigration(homeDirectory: home).migrate()
+                }.value
+                self.legacyRGBWarning = false
+                self.errorMessage = nil
+                self.diagnostics.record(backup == nil ? "Servizio precedente già migrato" : "MKSleepRGB arrestato e archiviato. PeripheralKit gestisce ora gli RGB.")
+                self.configurationChanged?()
+            } catch { self.report(error) }
+        }
     }
 
     func recordButton() { recording = true; captureRequested?(true) }

@@ -36,8 +36,16 @@ struct SettingsView: View {
                     if model.safeMode { Label("Modalità sicura: rimappatura sospesa", systemImage: "shield").foregroundStyle(.secondary) }
                 }.padding(24)
                 if model.legacyRGBWarning {
-                    Label("RGB gestito da MKSleepRGB. Completa l’installazione di PeripheralKit per migrare il servizio.", systemImage: "info.circle")
-                        .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24).padding(.bottom, 12)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("RGB gestito dal servizio precedente MKSleepRGB.", systemImage: "info.circle")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Button(model.migratingLegacyService ? "Migrazione in corso…" : "Migra da MKSleepRGB") { model.migrateLegacyService() }
+                            .disabled(model.migratingLegacyService || !model.canMigrateLegacyService)
+                        Text(model.isInstalled && !model.hidGranted ? "Autorizza prima Monitoraggio input nella sezione Generali. Il vecchio servizio continua a gestire le luci." : model.isInstalled
+                             ? "Arresta il vecchio servizio e passa il controllo a PeripheralKit. Configurazione e backup vengono conservati."
+                             : "Installa l'app con lo schema PeripheralKit Install di Xcode, poi riaprila da Applicazioni.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }.padding(.horizontal, 24).padding(.bottom, 12)
                 }
                 if let error = model.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red)

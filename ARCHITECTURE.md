@@ -56,3 +56,11 @@ Il vecchio daemon deve essere disabilitato durante l'installazione della nuova a
 - [OpenRGB: disponibilità macOS, backend futuro opzionale](https://openrgb.org/releases.html)
 
 Le firme effettive vengono verificate compilando contro il SDK macOS locale. Nessuna API privata né driver kernel.
+
+## Aggiornamento: lifecycle gestito da Xcode
+
+Il progetto Xcode gestisce build, test, archive e installazione. Due schemi condivisi: `PeripheralKit` e `PeripheralKit Install`. Il secondo usa un target aggregato dipendente dall'app e una fase nativa Copy Files, con destinazione configurabile in `Configuration/Local.xcconfig`. Nessuna fase shell, nessun keychain dedicato: firma locale Xcode (`Sign to Run Locally`).
+
+`PeripheralKitTests` è un target XCTest senza host che compila gli stessi sorgenti di produzione esclusi CLI e main, così i test non avviano monitor, TCC o migrazioni. Le dipendenze hardware e launchctl sono sostituite da mock.
+
+`LegacyServiceMigration` verifica il vecchio plist, ne scrive e verifica il backup, arresta il solo servizio noto con Foundation Process/launchctl e rimuove la registrazione originale solo dopo aver verificato che il servizio sia scaricato. Configurazione e portachiavi rimangono intatti. L'azione richiede un click nella copia installata, permesso HID e configurazione valida. Non viene eseguita da una build Xcode o dai test.

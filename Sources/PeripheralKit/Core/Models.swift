@@ -125,3 +125,15 @@ struct AppConfiguration: Codable, Equatable, Sendable {
         }
     }
 }
+
+// Cocoa and Xcode may prepend launch arguments such as
+// -NSDocumentRevisionsDebugMode YES. Only explicit CLI verbs select the CLI.
+enum LaunchMode: Equatable {
+    case application, commandLine
+
+    static func resolve(executableName: String, arguments: [String]) -> LaunchMode {
+        if executableName == "mksleep-rgb" { return .commandLine }
+        let commands = ["help", "--help", "-h", "devices", "check", "authorize", "off", "on", "test", "daemon", "unregister-login"]
+        return arguments.first.map { commands.contains($0) } == true ? .commandLine : .application
+    }
+}
