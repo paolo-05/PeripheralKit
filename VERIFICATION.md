@@ -28,5 +28,8 @@ Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio 
 - Xcode XCTest: 29 test superati, 0 falliti (rimossi quattro test della migrazione completata, aggiunte due regressioni dell'invio).
 - Build Release, installazione tramite PeripheralKit Install e Archive riusciti; firma del bundle verificata con codesign.
 - UI installata verificata: nessun banner di migrazione, controlli Prova cambio Space presenti, configurazione RGB e mappature preservate.
-- Dopo la ricompilazione, macOS richiede di riabilitare Accessibilità e Monitoraggio input: prova fisica della correzione in attesa dell'utente. Nessun permesso è stato concesso automaticamente.
+- L’utente ha riabilitato Accessibilità e Monitoraggio input. La prima prova UI del solo cambio di destinazione HID non ha confermato spaceChanged: non è stata dichiarata risolta. Nessun permesso è stato concesso automaticamente.
 - Nessun riferimento al vecchio nome nei file versionati attuali. Componenti dismessi spostati nel Cestino; impostazioni correnti preservate.
+
+- Completata anche la sequenza esplicita dei modificatori richiesta dal SDK, con test del rilascio in ordine inverso. Suite Xcode nuovamente superata: 29 test.
+- La conferma fisica della sequenza completa rimane da ottenere dopo l’aggiornamento; la firma locale può richiedere un nuovo consenso macOS.

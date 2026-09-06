@@ -65,4 +65,6 @@ Il progetto Xcode gestisce build, test, archive e installazione. Due schemi cond
 
 Le preferenze RGB e mouse sono caricate soltanto dal file PeripheralKit. Il coordinatore RGB dell'app è l'unico monitor di stop/risveglio. La CLI offre operazioni diagnostiche e RGB esplicite, senza un secondo servizio residente.
 
-ActionEngine controlla CGPreflightPostEventAccess e pubblica coppie down/up marcate a cghidEventTap. Il tap di ricezione mouse resta a livello sessione. La UI permette di provare il cambio Space; una notifica spaceChanged costituisce una conferma separata dall'invio.
+ActionEngine controlla CGPreflightPostEventAccess e pubblica a cghidEventTap una sequenza marcata: modificatori premuti, down/up del tasto, modificatori rilasciati in ordine inverso. Il tap di ricezione mouse resta a livello sessione. La UI permette di provare il cambio Space; una notifica spaceChanged costituisce una conferma separata dall'invio.
+
+La sequenza segue CGEventCreateKeyboardEvent del SDK Apple, che richiede esplicitamente gli eventi dei modificatori. Tutti gli eventi di una scorciatoia sono creati prima di pubblicarli per evitare modificatori senza rilascio in caso di errore.

@@ -104,9 +104,10 @@ final class EngineTests: XCTestCase {
         var events: [CGEvent] = []
         let executor = ActionEngine(post: { event, _ in events.append(event) }, canPost: { true })
         try executor.execute([.previousSpace, .nextSpace, .missionControl])
-        XCTAssertEqual(events.map(\.type), [.keyDown, .keyUp, .keyDown, .keyUp, .keyDown, .keyUp])
-        XCTAssertEqual(events.map { $0.getIntegerValueField(.keyboardEventKeycode) }, [123, 123, 124, 124, 126, 126])
-        XCTAssertTrue(events.allSatisfy { $0.flags.contains(.maskControl) })
+        XCTAssertEqual(events.map(\.type), Array(repeating: [CGEventType.flagsChanged, .keyDown, .keyUp, .flagsChanged], count: 3).flatMap { $0 })
+        XCTAssertEqual(events.map { $0.getIntegerValueField(.keyboardEventKeycode) }, [59, 123, 123, 59, 59, 124, 124, 59, 59, 126, 126, 59])
+        XCTAssertTrue(events.filter { $0.type == .keyDown || $0.type == .keyUp }.allSatisfy { $0.flags.contains(.maskControl) })
+        XCTAssertTrue([3, 7, 11].allSatisfy { events[$0].flags.isEmpty })
         XCTAssertTrue(events.allSatisfy { $0.getIntegerValueField(.eventSourceUserData) == InputEventEngine.syntheticMarker })
     }
 
@@ -115,7 +116,7 @@ final class EngineTests: XCTestCase {
         var destinations: [CGEventTapLocation] = []
         let executor = ActionEngine(post: { _, destination in destinations.append(destination) }, canPost: { true })
         try executor.execute([.previousSpace, .nextSpace])
-        XCTAssertEqual(destinations, Array(repeating: .cghidEventTap, count: 4))
+        XCTAssertEqual(destinations, Array(repeating: .cghidEventTap, count: 8))
     }
 
     @MainActor
@@ -131,8 +132,11 @@ final class EngineTests: XCTestCase {
         var events: [CGEvent] = []
         let executor = ActionEngine(post: { event, _ in events.append(event) }, canPost: { true })
         try executor.execute([.shortcut(KeyboardShortcut(keyCode: 36, control: false, option: true, shift: true, command: true))])
-        XCTAssertEqual(events.count, 2)
-        XCTAssertEqual(events[0].flags, [.maskAlternate, .maskShift, .maskCommand])
+        XCTAssertEqual(events.map { $0.getIntegerValueField(.keyboardEventKeycode) }, [58, 56, 55, 36, 36, 55, 56, 58])
+        XCTAssertEqual(events[3].flags, [.maskAlternate, .maskShift, .maskCommand])
+        XCTAssertEqual(events[5].flags, [.maskAlternate, .maskShift])
+        XCTAssertEqual(events[6].flags, [.maskAlternate])
+        XCTAssertTrue(events[7].flags.isEmpty)
         XCTAssertThrowsError(try executor.execute([.shortcut(KeyboardShortcut(keyCode: 200))]))
     }
 }
