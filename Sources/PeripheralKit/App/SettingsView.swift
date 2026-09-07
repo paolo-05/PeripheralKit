@@ -1,10 +1,11 @@
 import SwiftUI
 
 private enum SettingsPage: String, CaseIterable, Identifiable {
-    case general = "Generali", mouse = "Mouse", devices = "Dispositivi", rgb = "RGB e stop", diagnostics = "Diagnostica", about = "Informazioni"
+    case lights = "Luci scrivania", general = "Generali", mouse = "Mouse", devices = "Dispositivi", rgb = "RGB e stop", diagnostics = "Diagnostica", about = "Informazioni"
     var id: String { rawValue }
     var icon: String {
         switch self {
+        case .lights: "lightbulb.led"
         case .general: "gearshape"
         case .mouse: "computermouse"
         case .devices: "cable.connector"
@@ -49,6 +50,7 @@ struct SettingsView: View {
 
     @ViewBuilder private var content: some View {
         switch page ?? .general {
+        case .lights: DeskLightsView(model: model, lights: model.lights)
         case .general: general
         case .mouse: mouse
         case .devices: devices
@@ -264,5 +266,71 @@ private struct DiagnosticsView: View {
                 }.font(.caption).padding(.vertical, 3)
             }
         }
+    }
+}
+
+private struct DeskLightsView: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject var lights: HappyLighting
+    @State private var identifier = ""
+
+    private var color: Binding<Color> {
+        Binding(get: {
+            let rgb = (try? RGBColor(hex: model.configuration.deskLight?.color ?? "#FF00FF"))
+            return Color(red: Double(rgb?.red ?? 255) / 255, green: Double(rgb?.green ?? 0) / 255, blue: Double(rgb?.blue ?? 255) / 255)
+        }, set: { value in
+            guard let rgb = NSColor(value).usingColorSpace(.sRGB) else { return }
+            model.configuration.deskLight?.color = String(format: "#%02X%02X%02X", Int((rgb.redComponent * 255).rounded()), Int((rgb.greenComponent * 255).rounded()), Int((rgb.blueComponent * 255).rounded()))
+        })
+    }
+
+    var body: some View {
+        Form {
+            Section("Striscia HappyLighting") {
+                if let light = model.configuration.deskLight {
+                    LabeledContent("Dispositivo", value: light.name)
+                    Text(light.identifier.uuidString).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    ColorPicker("Colore", selection: color, supportsOpacity: false)
+                    HStack {
+                        Button("Accendi / applica colore") { model.setDeskLight(on: true) }
+                        Button("Spegni") { model.setDeskLight(on: false) }
+                    }.disabled(lights.busy)
+                    Text("Il colore viene salvato e applicato all’accensione. Lo stato fisico delle luci non viene letto dal dispositivo.").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Alimenta la striscia, avvicinala al Mac e cerca i dispositivi. Seleziona il controller usato da HappyLighting.")
+                }
+                Text(lights.status).foregroundStyle(.secondary)
+                if let error = lights.error {
+                    Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).textSelection(.enabled)
+                    Button("Impostazioni Bluetooth") { model.openPrivacy("Privacy_Bluetooth") }
+                }
+                if lights.busy { Button("Annulla") { lights.cancel() } }
+            }
+            Section("Seleziona dispositivo") {
+                Button("Cerca strisce Bluetooth") { lights.scan() }.disabled(lights.busy)
+                ForEach(lights.devices) { device in
+                    Button {
+                        model.configuration.deskLight = DeskLightConfiguration(identifier: device.id, name: device.name)
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text(device.name)
+                            Text(device.id.uuidString).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }.disabled(lights.busy)
+                }
+                DisclosureGroup("Configura tramite identificatore macOS") {
+                    TextField("UUID Bluetooth", text: $identifier)
+                    Button("Usa identificatore") {
+                        if let id = UUID(uuidString: identifier.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                            model.configuration.deskLight = DeskLightConfiguration(identifier: id, name: "HappyLighting")
+                        }
+                    }.disabled(lights.busy || UUID(uuidString: identifier.trimmingCharacters(in: .whitespacesAndNewlines)) == nil)
+                    Text("Puoi usare l’UUID del precedente script Python. Non è l’indirizzo MAC.").font(.caption).foregroundStyle(.secondary)
+                }
+                if model.configuration.deskLight != nil {
+                    Button("Dimentica striscia", role: .destructive) { model.configuration.deskLight = nil }.disabled(lights.busy)
+                }
+            }
+        }.formStyle(.grouped)
     }
 }

@@ -5,6 +5,27 @@
 	"objectVersion" = "56";
 	"archiveVersion" = "1";
 	"objects" = {
+        "D01100000000000000000001" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/PeripheralKit/Hardware/HappyLighting.swift; sourceTree = SOURCE_ROOT; };
+        "D01100000000000000000002" = { isa = PBXBuildFile; fileRef = "D01100000000000000000001"; };
+        "D01100000000000000000003" = { isa = PBXBuildFile; fileRef = "D01100000000000000000001"; };
+		"A1C7D4E1F20A4C6D8E0F1234" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "PeripheralKit/Assets.xcassets";
+			"sourceTree" = "SOURCE_ROOT";
+		};
+		"B1C7D4E1F20A4C6D8E0F1234" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "A1C7D4E1F20A4C6D8E0F1234";
+		};
+		"C9B7D4E1F20A4C6D8E0F1234" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"B1C7D4E1F20A4C6D8E0F1234",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
 		"81F1F968559142E38101C4B2" = {
 			"isa" = "PBXContainerItemProxy";
 			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
@@ -185,6 +206,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Debug";
 			"buildSettings" = {
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
 				"PERIPHERALKIT_INSTALL_DIR" = "$(HOME)/Applications";
@@ -257,6 +279,7 @@
 			"buildPhases" = (
 				"A92F2F631FEEE7823909A3E9",
 				"7561BFB015D8F536760CB671",
+				"C9B7D4E1F20A4C6D8E0F1234",
 			);
 			"dependencies" = (
 			);
@@ -280,6 +303,7 @@
 				"A619C04D8A87AB070162A099",
 				"B6561938591A059DEBBCECA2",
 				"C3AA13D4B9D7726694FDDE01",
+				"A1C7D4E1F20A4C6D8E0F1234",
 				"FBDC4F23F93125BBEEAE800C",
 			);
 		};
@@ -421,6 +445,7 @@
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+                "D01100000000000000000002",
 				"6FF8E9695821C590AC8C267A",
 				"C5F653A94E0801F3A4170D0E",
 				"C68B99DE579EEB7F79CB7A3A",
@@ -596,6 +621,7 @@
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+                "D01100000000000000000003",
 				"A91C9FE1214C79F06026814C",
 				"5601DB6DB1276DB6EEBC0E0A",
 				"990E02821416FE2114D63E00",
@@ -622,6 +648,7 @@
 			"isa" = "PBXGroup";
 			"name" = "Hardware";
 			"children" = (
+                "D01100000000000000000001",
 				"127DD4D714682EB99C5408CB",
 				"0739D370B07F9514B10AE574",
 				"13EEFED77C75A208C6B7B68F",
@@ -674,6 +701,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Release";
 			"buildSettings" = {
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "";
 				"PERIPHERALKIT_INSTALL_DIR" = "$(HOME)/Applications";

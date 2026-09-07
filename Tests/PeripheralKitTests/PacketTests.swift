@@ -4,6 +4,27 @@ import XCTest
 #endif
 
 final class PacketTests: XCTestCase {
+    func testHappyLightingMatchesWorkingPythonPackets() throws {
+        XCTAssertEqual(Array(HappyLightingPacket.power(true)), [204, 35, 51])
+        XCTAssertEqual(Array(HappyLightingPacket.power(false)), [204, 36, 51])
+        XCTAssertEqual(Array(HappyLightingPacket.color(try RGBColor(hex: "#FF00FF"))), [86, 255, 0, 255, 25, 240, 170])
+        XCTAssertEqual(Array(HappyLightingPacket.color(try RGBColor(hex: "#123456"))), [86, 18, 52, 86, 25, 240, 170])
+    }
+
+    func testExistingConfigurationWithoutDeskLightStillLoads() throws {
+        let encoder = JSONEncoder()
+        let original = AppConfiguration()
+        let encoded = try encoder.encode(original)
+        let restored = try JSONDecoder().decode(AppConfiguration.self, from: encoded)
+        XCTAssertNil(restored.deskLight)
+        XCTAssertEqual(restored, original)
+        var updated = original
+        updated.deskLight = DeskLightConfiguration(identifier: UUID(), name: "Triones", color: "#123456")
+        XCTAssertEqual(try JSONDecoder().decode(AppConfiguration.self, from: encoder.encode(updated)), updated)
+        updated.deskLight?.color = "bad color"
+        XCTAssertThrowsError(try updated.validate())
+    }
+
     func testRazerFirmwarePacket() {
         let bytes = RazerReport.firmwareQuery().bytes
         XCTAssertEqual(bytes.count, 90)

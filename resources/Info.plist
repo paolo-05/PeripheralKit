@@ -18,6 +18,8 @@
 	<string>0.1</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -26,6 +28,8 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Utility locale per Drevo Tyrfing V2 e Razer DeathAdder V2</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>PeripheralKit usa Bluetooth per accendere, spegnere e impostare il colore della striscia LED della scrivania.</string>
 	<key>NSInputMonitoringUsageDescription</key>
 	<string>PeripheralKit usa l'accesso HID esclusivamente per spegnere e ripristinare l'illuminazione delle periferiche USB.</string>
 	<key>PeripheralKitInstallDirectory</key>

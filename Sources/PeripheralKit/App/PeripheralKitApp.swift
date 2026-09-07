@@ -71,6 +71,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         rgb.state = model.configuration.rgbEnabled ? .on : .off
         menu.addItem(rgb)
         menu.addItem(.separator())
+        if model.configuration.deskLight != nil {
+            for (title, action) in [("Accendi luci scrivania", #selector(deskLightsOn)), ("Spegni luci scrivania", #selector(deskLightsOff))] {
+                let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+                item.target = self
+                item.isEnabled = !model.lights.busy
+                menu.addItem(item)
+            }
+            menu.addItem(NSMenuItem(title: model.lights.error ?? model.lights.status, action: nil, keyEquivalent: ""))
+            menu.addItem(.separator())
+        }
         let settings = NSMenuItem(title: "Impostazioni…", action: #selector(showSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
@@ -78,6 +88,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(quit)
     }
 
+    @objc func deskLightsOn() { model.setDeskLight(on: true) }
+    @objc func deskLightsOff() { model.setDeskLight(on: false) }
     @objc func toggleRemapping() { model.configuration.remappingEnabled.toggle() }
     @objc func toggleRGB() { model.configuration.rgbEnabled.toggle() }
     @objc func showSettings() {

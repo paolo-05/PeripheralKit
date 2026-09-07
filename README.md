@@ -79,3 +79,13 @@ Il target XCTest è senza app host: compila gli stessi file di produzione esclud
 - [Apple: firma del codice](https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html)
 
 I pacchetti originali sono preservati. Riferimenti storici: [RazerControl, MIT](https://github.com/pol-cova/RazerControl), [OpenRazer](https://github.com/openrazer/openrazer), [dtv2](https://github.com/cobacdavid/dtv2), [DrevoTyrfing](https://github.com/dennisblokland/DrevoTyrfing) e [HIDAPI](https://github.com/libusb/hidapi). Le attribuzioni dei riferimenti originali vanno completate prima di una distribuzione pubblica.
+
+## Luci scrivania HappyLighting (BLE)
+
+In **Impostazioni → Luci scrivania**, cerca le strisce Bluetooth e seleziona il tuo controller. La ricerca dura al massimo 15 secondi e mostra nomi Triones, HappyLighting, ELK o LED; puoi anche inserire l’UUID macOS del vecchio script nella configurazione manuale. La selezione non invia comandi.
+
+Scegli un colore e premi **Accendi / applica colore**, oppure **Spegni**. Dopo la selezione, accensione e spegnimento sono disponibili anche nella barra menu. Dispositivo e colore sono salvati nella sezione opzionale `deskLight` della configurazione; i file precedenti continuano a caricarsi.
+
+Il collegamento usa CoreBluetooth direttamente, senza SwiftBar, launcher o Python. macOS richiede il permesso Bluetooth al primo utilizzo. In caso di timeout, verifica alimentazione e distanza e chiudi l’app HappyLighting sul telefono. Ogni operazione rilascia la connessione al termine; gli errori sono visibili nella pagina e nel menu.
+
+Questa versione controlla manualmente una striscia e non la include nello stop/risveglio USB. “Comando inviato” indica la conferma di scrittura GATT, non una lettura dello stato fisico dei LED. Il protocollo riproduce `RGB-remote/LED_source.py`: power `CC 23/24 33`, colore `56 R G B 19 F0 AA`. Non tutti i controller venduti come HappyLighting usano questo protocollo. Il controller deve esporre una sola caratteristica scrivibile sia con sia senza risposta nei servizi non GAP/GATT, come nello script di riferimento; in caso di ambiguità l’app non scrive.

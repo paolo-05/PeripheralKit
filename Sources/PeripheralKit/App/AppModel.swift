@@ -25,6 +25,7 @@ final class AppModel: ObservableObject {
     @Published var inputStatus = "Rimappatura disattivata"
     @Published var recording = false
     @Published var lastButton: Int?
+    let lights = HappyLighting()
     let diagnostics = Diagnostics()
     let safeMode: Bool
     let store = ConfigurationStore()
@@ -117,6 +118,12 @@ final class AppModel: ObservableObject {
         let parent = Bundle.main.bundleURL.deletingLastPathComponent().standardizedFileURL
         return parent == FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications").standardizedFileURL
             || parent == URL(fileURLWithPath: "/Applications", isDirectory: true).standardizedFileURL
+    }
+
+    func setDeskLight(on: Bool) {
+        guard let light = configuration.deskLight else { return }
+        do { lights.send(to: light.identifier, on: on, color: try RGBColor(hex: light.color)) }
+        catch { report(error) }
     }
 
     func recordButton() { recording = true; captureRequested?(true) }

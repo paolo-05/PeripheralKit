@@ -48,3 +48,11 @@ Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio 
 - Build Release, Archive e installazione finali completati con il certificato locale; firma verificata.
 
 - Prova hardware reale alle 21:13–21:14: primo invio Drevo alle 21:13:59, quattro errori IOKit 0xe00002e2 durante il secondo passaggio, recupero alle 21:14:05 e ultimo reinvio alle 21:14:10. Mouse ripristinato indipendentemente alle 21:13:59. L’utente ha confermato «La tastiera si riaccende».
+
+## HappyLighting BLE, 7 settembre
+
+- Aggiunti controllo nativo CoreBluetooth, ricerca e selezione della striscia, colore persistente, accensione/spegnimento e azioni nella barra menu.
+- Suite SwiftPM con toolchain Xcode: **34 test superati**. Nuove verifiche dei pacchetti contro lo script Python funzionante e della compatibilità/validazione della configurazione opzionale.
+- Build Debug del target Xcode PeripheralKit firmata con l’identità locale: riuscita, output in `/tmp/peripheralkit-happylighting-xcode/Debug/PeripheralKit.app`.
+- La prima esecuzione dei test nel sandbox non poteva creare eventi Quartz per tre test preesistenti; rieseguita fuori dal sandbox, tutta la suite passa.
+- Nessuna prova BLE fisica né verifica visuale della nuova pagina effettuata. Da verificare: consenso Bluetooth, ricerca/selezione del controller, accensione, colore, spegnimento, timeout con striscia non alimentata. L’app installata non è stata sostituita.

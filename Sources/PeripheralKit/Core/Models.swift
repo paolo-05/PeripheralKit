@@ -96,6 +96,7 @@ struct AppConfiguration: Codable, Equatable, Sendable {
     var systemSleepEnabled = true
     var displaySleepEnabled = true
     var restoreOnWake = true
+    var deskLight: DeskLightConfiguration?
     var rgb = Configuration()
     var rules: [Rule] = [
         Rule(name: "Space precedente", trigger: .mouseButton(4), actions: [.previousSpace]),
@@ -107,6 +108,7 @@ struct AppConfiguration: Codable, Equatable, Sendable {
         guard rgb.wakeDelaySeconds.isFinite, (0...30).contains(rgb.wakeDelaySeconds) else {
             throw PeripheralKitError.invalidConfiguration("Il ritardo di risveglio deve essere tra 0 e 30 secondi.")
         }
+        if let deskLight { _ = try RGBColor(hex: deskLight.color) }
         _ = try RGBColor(hex: rgb.keyboard.color)
         _ = try RGBColor(hex: rgb.keyboard.secondaryColor)
         _ = try RGBColor(hex: rgb.mouse.color)
@@ -135,4 +137,10 @@ enum LaunchMode: Equatable {
         let commands = ["help", "--help", "-h", "devices", "check", "authorize", "off", "on", "test", "unregister-login"]
         return arguments.first.map { commands.contains($0) } == true ? .commandLine : .application
     }
+}
+
+struct DeskLightConfiguration: Codable, Equatable, Sendable {
+    var identifier: UUID
+    var name: String
+    var color = "#FF00FF"
 }
