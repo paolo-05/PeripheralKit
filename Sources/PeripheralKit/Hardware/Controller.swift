@@ -14,13 +14,21 @@ struct ApplyResult: Sendable {
 protocol RGBDeviceAdapter: Sendable {
     var id: String { get }
     var name: String { get }
+    var wakeReapplyDelays: [Double] { get }
     func isEnabled(in configuration: Configuration) -> Bool
     func apply(_ state: PowerState, configuration: Configuration) throws
+}
+
+extension RGBDeviceAdapter {
+    var wakeReapplyDelays: [Double] { [] }
 }
 
 struct DrevoRGBAdapter: RGBDeviceAdapter {
     let id = "drevo-0416-a0f8"
     let name = "Drevo Tyrfing V2"
+    // A USB write can succeed before the keyboard firmware finishes waking.
+    // Reopen the endpoint and reapply after it has had time to settle.
+    let wakeReapplyDelays: [Double] = [2, 5]
     func isEnabled(in configuration: Configuration) -> Bool { configuration.keyboard.enabled }
     func apply(_ state: PowerState, configuration: Configuration) throws {
         let keyboard = DrevoTyrfingV2()

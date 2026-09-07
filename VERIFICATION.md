@@ -33,3 +33,16 @@ Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio 
 
 - Completata anche la sequenza esplicita dei modificatori richiesta dal SDK, con test del rilascio in ordine inverso. Suite Xcode nuovamente superata: 29 test.
 - La conferma fisica della sequenza completa rimane da ottenere dopo l’aggiornamento; la firma locale può richiedere un nuovo consenso macOS.
+
+## Aggiornamento del 7 settembre: firma e tastiera
+
+- Creato, con consenso esplicito dell’utente, un certificato locale persistente nel portachiavi login. Attendibilità limitata alla firma del codice; nessuna chiave nel repository.
+- Debug e Release verificati con codesign: CDHash differenti, identico requisito designato (bundle ID + certificato leaf).
+- Tutti i target Xcode usano la medesima identità; eliminato il ripiego automatico sulla firma ad hoc.
+- 32 test XCTest superati: incluso il ripristino dopo cinque errori iniziali, reinvii Drevo indipendenti dal mouse e annullamento dei reinvii dopo un nuovo sleep.
+- La tastiera riapre HID e reinvia il profilo due volte dopo il primo successo; ogni passaggio ha un massimo di sette tentativi. Lo snapshot resta fino al termine della sequenza.
+- I log di alimentazione e ripristino RGB sono persistenti nel log unificato per la diagnosi dopo un riavvio dell’app.
+- La riaccensione fisica della tastiera dopo sleep deve ancora essere confermata dall’utente; il successo USB non costituisce una lettura dello stato dei LED.
+
+- Verifica reale dei permessi: l’utente ha autorizzato la prima build firmata (Debug). Sostituita con Release, che ha CDHash diverso, e riaperta: Accessibilità e Monitoraggio input ancora autorizzati, rimappatura attiva, nessun nuovo consenso richiesto.
+- Build Release, Archive e installazione finali completati con il certificato locale; firma verificata.

@@ -23,9 +23,11 @@ Il progetto Xcode è il flusso principale. `Package.swift` rimane soltanto per c
 
 ## Firma e prima installazione
 
-La firma predefinita Xcode è **Sign to Run Locally** (`CODE_SIGN_IDENTITY = -`). Non usa chiavi private o portachiavi dedicati. Non occorre selezionare un Team per eseguire questa copia locale.
+Xcode usa l'identità **PeripheralKit Local Development**, conservata nel portachiavi **login**. La stessa chiave firma Debug e Release: il requisito di identità dipende dal certificato e dal bundle ID, non dall'hash della singola build. Non rigenerare il certificato durante gli aggiornamenti.
 
-La firma locale è ad hoc: macOS può richiedere di concedere di nuovo i permessi dopo una ricompilazione. Per una firma persistente o per distribuire l'app, configura il tuo Team e il certificato appropriato in **Signing & Capabilities**.
+Il primo passaggio dalla firma precedente richiede un'ultima autorizzazione in **Accessibilità** e **Monitoraggio input**. Le build successive mantengono l'identità; usa sempre `~/Applications/PeripheralKit.app` per l'installazione. Cambiare certificato, bundle ID o percorso può richiedere nuovi permessi. Il portachiavi login deve essere sbloccato durante la firma: un'eventuale richiesta riguarda la password del tuo account macOS, non una password generata dal progetto.
+
+`Configuration/Local.xcconfig` seleziona il certificato. Su un altro Mac serve importare l'identità completa (certificato e chiave privata) o selezionare un proprio certificato Apple. Xcode interrompe la build se l'identità manca: non ripiega silenziosamente sulla firma ad hoc. Certificato e chiave privata non sono nel repository. La firma locale non sostituisce Developer ID/notarizzazione per distribuire pubblicamente l'app.
 
 1. Chiudi le altre copie e usa **PeripheralKit Install → Run**.
 2. In **Generali**, autorizza **Monitoraggio input** per gli RGB e **Accessibilità** per le azioni mouse. Se richiesto, riapri l'app.
@@ -50,7 +52,7 @@ Le scorciatoie vengono inviate al flusso HID, prima della gestione della session
 - Consumo/passaggio evento originale, regole disattivabili e interruttore globale.
 - Inventario HID con aggiornamento ogni tre secondi.
 - RGB diretto Drevo Tyrfing V2 (`0416:a0f8`) e Razer DeathAdder V2 (`1532:0084`).
-- Stop sistema e schermi separati; ripristino con attesa e cinque tentativi cancellabili.
+- Stop sistema e schermi separati; ripristino con attesa e sette tentativi cancellabili per passaggio.
 
 Le mappature sono **globali per tutti i mouse**: Quartz non espone l'identità USB affidabile del dispositivo sorgente. Per gli Spaces, abilita Ctrl+←/→ nelle abbreviazioni Mission Control di macOS; Mission Control usa Ctrl+↑.
 
@@ -60,7 +62,7 @@ Profili per applicazione, isolamento per dispositivo, editor generico e OpenRGB 
 
 Sono preservati i report HID originali e i profili: static/rainbow/breathing/stream/radar/memory per la tastiera, spectrum/static/breathing per il mouse. Per cambiare colori ed effetti, chiudi l'app e modifica la sezione `rgb` del JSON; `config.example.json` documenta il formato RGB.
 
-Il ripristino riguarda il **profilo configurato**, memorizzato prima dello stop, non un effetto impostato esternamente nel firmware. La selezione RGB è per modello. Dopo l'attesa configurata, il ripristino ritenta a intervalli 0, 250 ms, 500 ms, 1 s e 2 s solo sugli adapter falliti. Un nuovo stop cancella il ripristino precedente.
+Il ripristino riguarda il **profilo configurato**, memorizzato prima dello stop, non un effetto impostato esternamente nel firmware. La selezione RGB è per modello. Dopo l'attesa configurata, ogni passaggio ritenta a intervalli 0, 250 ms, 500 ms, 1 s, 2 s, 4 s e 8 s. La Drevo riapre il collegamento HID e reinvia il profilo dopo ulteriori 2 e 5 secondi, anche quando la prima scrittura USB riesce. Il mouse conclude il proprio ripristino indipendentemente. Un nuovo stop cancella tutti i passaggi del risveglio precedente. Il protocollo non offre una verifica ottica: i log attestano l’invio USB, non che i LED siano effettivamente accesi.
 
 Le scritture HID sono fuori dal thread UI. La notifica `NSWorkspace.willSleepNotification` non garantisce il completamento USB prima della sospensione: lo spegnimento resta best effort, senza trattenere il Mac con un'assertion.
 

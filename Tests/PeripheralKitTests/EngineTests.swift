@@ -194,7 +194,8 @@ private final class MockRGBAdapter: RGBDeviceAdapter, @unchecked Sendable {
     private var calls: [PowerState] = []
     private var configs: [Configuration] = []
     private var wakeFailures: Int
-    init(id: String = "mock", wakeFailures: Int = 0) { self.id = id; self.wakeFailures = wakeFailures }
+    let wakeReapplyDelays: [Double]
+    init(id: String = "mock", wakeFailures: Int = 0, wakeReapplyDelays: [Double] = []) { self.id = id; self.wakeFailures = wakeFailures; self.wakeReapplyDelays = wakeReapplyDelays }
     func isEnabled(in configuration: Configuration) -> Bool { configuration.mouse.enabled }
     func apply(_ state: PowerState, configuration: Configuration) throws {
         try lock.withLock {
@@ -208,6 +209,30 @@ private final class MockRGBAdapter: RGBDeviceAdapter, @unchecked Sendable {
     }
     var states: [PowerState] { lock.withLock { calls } }
     var configurations: [Configuration] { lock.withLock { configs } }
+}
+
+private actor WakeReapplyGate {
+    private var entered = false
+    private var entrance: CheckedContinuation<Void, Never>?
+    private var release: CheckedContinuation<Void, Never>?
+
+    func wait(_ delay: Double) async {
+        guard delay == 2 else { return }
+        entered = true
+        entrance?.resume()
+        entrance = nil
+        await withCheckedContinuation { release = $0 }
+    }
+
+    func waitUntilEntered() async {
+        if entered { return }
+        await withCheckedContinuation { entrance = $0 }
+    }
+
+    func resume() {
+        release?.resume()
+        release = nil
+    }
 }
 
 final class RGBSleepTests: XCTestCase, @unchecked Sendable {
@@ -229,13 +254,57 @@ final class RGBSleepTests: XCTestCase, @unchecked Sendable {
         XCTAssertNil(snapshot)
     }
 
+    func testKeyboardReappliesAfterSuccessWithoutRepeatingMouse() async {
+        let keyboard = MockRGBAdapter(id: "keyboard", wakeReapplyDelays: [2, 5])
+        let mouse = MockRGBAdapter(id: "mouse")
+        let coordinator = RGBSleepCoordinator(adapters: [keyboard, mouse], wait: { _ in }, log: { _, _ in })
+        let original = AppConfiguration()
+        await coordinator.transition(toSleep: true, configuration: original)
+        await coordinator.transition(toSleep: false, configuration: original)
+        await coordinator.finishPendingRestoration()
+        XCTAssertEqual(keyboard.states, [.sleeping, .awake, .awake, .awake])
+        XCTAssertEqual(mouse.states, [.sleeping, .awake])
+        XCTAssertTrue(keyboard.configurations.allSatisfy { $0 == original.rgb })
+        let snapshot = await coordinator.cachedConfiguration()
+        XCTAssertNil(snapshot)
+    }
+
+    func testNewSleepCancelsKeyboardReapplyAfterFirstSuccessfulWrite() async {
+        let keyboard = MockRGBAdapter(wakeReapplyDelays: [2, 5])
+        let gate = WakeReapplyGate()
+        let coordinator = RGBSleepCoordinator(adapters: [keyboard], wait: { await gate.wait($0) }, log: { _, _ in })
+        await coordinator.transition(toSleep: true, configuration: AppConfiguration())
+        let wake = Task {
+            await coordinator.transition(toSleep: false, configuration: AppConfiguration())
+            await coordinator.finishPendingRestoration()
+        }
+        await gate.waitUntilEntered()
+        await coordinator.transition(toSleep: true, configuration: AppConfiguration())
+        await gate.resume()
+        await wake.value
+        XCTAssertEqual(keyboard.states, [.sleeping, .awake, .sleeping])
+        let snapshot = await coordinator.cachedConfiguration()
+        XCTAssertNotNil(snapshot)
+    }
+
+    func testLateKeyboardEnumerationStillRecovers() async {
+        let keyboard = MockRGBAdapter(wakeFailures: 5)
+        let coordinator = RGBSleepCoordinator(adapters: [keyboard], wait: { _ in }, log: { _, _ in })
+        await coordinator.transition(toSleep: true, configuration: AppConfiguration())
+        await coordinator.transition(toSleep: false, configuration: AppConfiguration())
+        await coordinator.finishPendingRestoration()
+        XCTAssertEqual(keyboard.states.filter { $0 == .awake }.count, 6)
+        let snapshot = await coordinator.cachedConfiguration()
+        XCTAssertNil(snapshot)
+    }
+
     func testRetryBudgetIsBoundedAndFailureRetainsSnapshot() async {
         let adapter = MockRGBAdapter(wakeFailures: 20)
         let coordinator = RGBSleepCoordinator(adapters: [adapter], wait: { _ in }, log: { _, _ in })
         await coordinator.transition(toSleep: true, configuration: AppConfiguration())
         await coordinator.transition(toSleep: false, configuration: AppConfiguration())
         await coordinator.finishPendingRestoration()
-        XCTAssertEqual(adapter.states.filter { $0 == .awake }.count, 5)
+        XCTAssertEqual(adapter.states.filter { $0 == .awake }.count, 7)
         let snapshot = await coordinator.cachedConfiguration()
         XCTAssertNotNil(snapshot)
     }

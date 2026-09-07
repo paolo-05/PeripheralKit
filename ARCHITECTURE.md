@@ -25,7 +25,7 @@ CGEvent non espone un'identità USB pubblica affidabile del mouse sorgente. La l
 
 InputEventSource → RuleEngine → ActionExecutor. Il tap valuta solo una fotografia delle regole e decide immediatamente pass-through/soppressione; l'esecuzione viene accodata. Down e up restano accoppiati anche se la regola viene disattivata durante il click. Eventi sintetici marcati; nessun monitor globale di tasti.
 
-SystemEventMonitor → stato combinato sistema/schermo → coordinatore RGB → RGBDeviceAdapter. Una coda seriale separa HID dalla UI; il profilo prima dello stop viene mantenuto fino al ripristino. Le notifiche duplicate non sovrascrivono il profilo. Una generazione cancella i ripristini superati; i tentativi seguono ritardi 0, 250 ms, 500 ms, 1 s, 2 s dopo il ritardo configurato. Nessun comando RGB viene inviato solo perché si apre l'app.
+SystemEventMonitor → stato combinato sistema/schermo → coordinatore RGB → RGBDeviceAdapter. Una coda seriale separa HID dalla UI; il profilo prima dello stop viene mantenuto fino al ripristino. Le notifiche duplicate non sovrascrivono il profilo. Una generazione cancella i ripristini superati; ogni passaggio usa tentativi a intervalli 0, 250 ms, 500 ms, 1 s, 2 s, 4 s e 8 s dopo il ritardo configurato. Nessun comando RGB viene inviato solo perché si apre l'app.
 
 ## Struttura
 
@@ -59,7 +59,7 @@ Le firme effettive vengono verificate compilando contro il SDK macOS locale. Nes
 
 ## Aggiornamento: lifecycle gestito da Xcode
 
-Il progetto Xcode gestisce build, test, archive e installazione. Due schemi condivisi: `PeripheralKit` e `PeripheralKit Install`. Il secondo usa un target aggregato dipendente dall'app e una fase nativa Copy Files, con destinazione configurabile in `Configuration/Local.xcconfig`. Nessuna fase shell, nessun keychain dedicato: firma locale Xcode (`Sign to Run Locally`).
+Il progetto Xcode gestisce build, test, archive e installazione. Due schemi condivisi: `PeripheralKit` e `PeripheralKit Install`. Il secondo usa un target aggregato dipendente dall'app e una fase nativa Copy Files, con destinazione configurabile in `Configuration/Local.xcconfig`. Nessuna fase shell, nessun keychain dedicato: firma locale Xcode con certificato persistente `PeripheralKit Local Development` nel portachiavi login.
 
 `PeripheralKitTests` è un target XCTest senza host che compila gli stessi sorgenti di produzione esclusi CLI e main, così i test non avviano monitor, TCC. Le dipendenze hardware sono sostituite da mock.
 
@@ -68,3 +68,9 @@ Le preferenze RGB e mouse sono caricate soltanto dal file PeripheralKit. Il coor
 ActionEngine controlla CGPreflightPostEventAccess e pubblica a cghidEventTap una sequenza marcata: modificatori premuti, down/up del tasto, modificatori rilasciati in ordine inverso. Il tap di ricezione mouse resta a livello sessione. La UI permette di provare il cambio Space; una notifica spaceChanged costituisce una conferma separata dall'invio.
 
 La sequenza segue CGEventCreateKeyboardEvent del SDK Apple, che richiede esplicitamente gli eventi dei modificatori. Tutti gli eventi di una scorciatoia sono creati prima di pubblicarli per evitare modificatori senza rilascio in caso di errore.
+
+## Ripristino USB e identità stabile
+
+La Drevo richiede due reinvii ritardati dopo il primo invio riuscito (attese aggiuntive di 2 e 5 secondi), riaprendo il dispositivo per ogni scrittura. Il coordinatore mantiene lo snapshot finché tutti i passaggi sono terminati; gli adapter procedono in task separati sullo stesso actor e un nuovo sleep invalida l'intera generazione. I log di alimentazione e invio RGB usano il livello notice per permettere diagnosi anche dopo una riapertura dell'app.
+
+Tutti i target riusano `PERIPHERALKIT_SIGNING_IDENTITY`. Il requisito designato combina bundle ID e certificato leaf; non include il cdhash specifico della build. Nessuna chiave nel repository, nessuna rigenerazione o firma ad hoc nel processo di build. La prima transizione di identità richiede nuovamente i consensi macOS.

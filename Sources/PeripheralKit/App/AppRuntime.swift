@@ -16,7 +16,7 @@ final class AppRuntime {
         self.actions = actions
         let diagnostics = model.diagnostics
         rgb = RGBSleepCoordinator { message, error in
-            Task { @MainActor in diagnostics.record(message, error: error) }
+            Task { @MainActor in diagnostics.record(message, error: error, persistent: true) }
         }
     }
 
@@ -61,7 +61,7 @@ final class AppRuntime {
         input.onTapRecovery = { [weak self] in self?.model.diagnostics.record("Monitor mouse riattivato da macOS") }
         system.onEvent = { [weak self] event in
             guard let self else { return }
-            self.model.diagnostics.record("Sistema: \(event.rawValue)")
+            self.model.diagnostics.record("Sistema: \(event.rawValue)", persistent: event != .applicationChanged && event != .spaceChanged)
             self.input.foregroundApplication = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             self.policy.receive(event)
             self.updatePower()

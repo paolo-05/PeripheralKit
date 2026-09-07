@@ -54,7 +54,7 @@
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "";
 				"BUNDLE_LOADER" = "";
 				"SKIP_INSTALL" = "YES";
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"TEST_HOST" = "";
 				"ENABLE_APP_SANDBOX" = "NO";
 				"GENERATE_INFOPLIST_FILE" = "YES";
@@ -185,7 +185,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Debug";
 			"buildSettings" = {
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
 				"PERIPHERALKIT_INSTALL_DIR" = "$(HOME)/Applications";
 				"COMBINE_HIDPI_IMAGES" = "YES";
@@ -496,7 +496,7 @@
 			"name" = "Release";
 			"buildSettings" = {
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"CODE_SIGN_STYLE" = "Manual";
 				"SKIP_INSTALL" = "YES";
 				"PRODUCT_NAME" = "PeripheralKitLauncher";
@@ -578,7 +578,7 @@
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
 				"BUNDLE_LOADER" = "";
 				"SKIP_INSTALL" = "YES";
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"TEST_HOST" = "";
 				"ENABLE_APP_SANDBOX" = "NO";
 				"GENERATE_INFOPLIST_FILE" = "YES";
@@ -674,7 +674,7 @@
 			"isa" = "XCBuildConfiguration";
 			"name" = "Release";
 			"buildSettings" = {
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "";
 				"PERIPHERALKIT_INSTALL_DIR" = "$(HOME)/Applications";
 				"COMBINE_HIDPI_IMAGES" = "YES";
@@ -699,7 +699,7 @@
 			"name" = "Debug";
 			"buildSettings" = {
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
-				"CODE_SIGN_IDENTITY" = "-";
+				"CODE_SIGN_IDENTITY" = "$(PERIPHERALKIT_SIGNING_IDENTITY)";
 				"CODE_SIGN_STYLE" = "Manual";
 				"SKIP_INSTALL" = "YES";
 				"PRODUCT_NAME" = "PeripheralKitLauncher";
