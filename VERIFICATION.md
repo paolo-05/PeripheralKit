@@ -42,7 +42,9 @@ Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio 
 - 32 test XCTest superati: incluso il ripristino dopo cinque errori iniziali, reinvii Drevo indipendenti dal mouse e annullamento dei reinvii dopo un nuovo sleep.
 - La tastiera riapre HID e reinvia il profilo due volte dopo il primo successo; ogni passaggio ha un massimo di sette tentativi. Lo snapshot resta fino al termine della sequenza.
 - I log di alimentazione e ripristino RGB sono persistenti nel log unificato per la diagnosi dopo un riavvio dell’app.
-- La riaccensione fisica della tastiera dopo sleep deve ancora essere confermata dall’utente; il successo USB non costituisce una lettura dello stato dei LED.
+- L’utente conferma la riaccensione fisica della tastiera dopo la prova sleep/wake del 7 settembre. Il successo USB, da solo, non costituisce una lettura dello stato dei LED.
 
 - Verifica reale dei permessi: l’utente ha autorizzato la prima build firmata (Debug). Sostituita con Release, che ha CDHash diverso, e riaperta: Accessibilità e Monitoraggio input ancora autorizzati, rimappatura attiva, nessun nuovo consenso richiesto.
 - Build Release, Archive e installazione finali completati con il certificato locale; firma verificata.
+
+- Prova hardware reale alle 21:13–21:14: primo invio Drevo alle 21:13:59, quattro errori IOKit 0xe00002e2 durante il secondo passaggio, recupero alle 21:14:05 e ultimo reinvio alle 21:14:10. Mouse ripristinato indipendentemente alle 21:13:59. L’utente ha confermato «La tastiera si riaccende».
