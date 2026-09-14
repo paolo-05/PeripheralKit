@@ -1,5 +1,53 @@
 # Verifiche di PeripheralKit — 6 settembre 2026
 
+## Scene, zone e riconnessione, 13 settembre 2026
+
+- Conferma fisica dell’utente: gradiente Razer a cinque colori regolare su entrambe le zone; stop completo e risveglio ripristinano tastiera, mouse, striscia e ciclo software.
+- Nuova Release installata con permessi conservati. Dock scollegato e ricollegato: profili USB e gradiente recuperati automaticamente, pulsanti laterali e cambio Space confermati dall’utente.
+- Anteprima hardware: logo rosso fisso e rotella con gradiente confermati dall’utente. Il JSON mantiene il profilo originale; Annulla ripristina il gradiente su entrambe le zone, confermato fisicamente.
+- Scena “Scrivania” creata dai profili salvati; applicazione UI riuscita, log USB per Drevo/Razer e conferma Bluetooth del controller. Questa scena viene conservata come configurazione iniziale utile.
+- Selettore nativo app verificato: assegnazione associata ad Automator, poi riportata a Tutte le app. Regole originali conservate. Precedenza e fallback verificati con XCTest, senza generare input sintetici verso altre app.
+- Test automatici includono riconnessione con errori transitori, assenza di riaccensione durante stop, compatibilità scene/zone e interpolazione per zona. **61 test XCTest superati**, nessun fallimento o test saltato. Release finale firmata e installata; permessi conservati.
+- Non eseguiti logout/login reale o test prolungati di ore.
+
+## Editor per dispositivo e gradiente, 9 settembre 2026
+
+- Editor riorganizzato con selezione tastiera/mouse, anteprima schematica, lista effetti, palette/HEX e slider. Illuminazione separata da Stop e risveglio; footer persistente con Salva e applica e Annulla modifiche.
+- Bozze separate verificate: palette blu in anteprima mentre il JSON conserva il fucsia salvato; HEX non valido disabilita Salva e applica; annullamento ripristina il valore precedente. Permessi conservati dopo installazione della Release firmata.
+- Applicazione mirata: test di invio alla sola periferica scelta, anche esclusa dall’automazione, e conservazione del ripristino pendente dell’altra periferica.
+- Aggiunto Spectrum completo o Gradiente personalizzato sul mouse: 2–8 colori, riordino, HEX, durata 2–120 secondi, anteprima animata e interpolazione ciclica ultimo→primo. Il gradiente è software e richiede l’app aperta; il comando firmware Spectrum resta invariato senza palette.
+- **54 test XCTest superati**, inclusi interpolazione e chiusura del ciclo, validazione/compatibilità/persistenza, limite errori USB, cancellazione per stop e sostituzione con colore fisso.
+- Interfaccia del gradiente verificata nell’app installata: aggiunta e riordino dei colori, blocco HEX non valido e annullamento. Nessuna palette di prova salvata; conservato Spectrum completo.
+- Verifica hardware finale non eseguita: la CLI rileva zero interfacce HID sia Drevo sia Razer. La progressione fisica dei colori e lo stop/risveglio con gradiente software restano da confermare quando il mouse è collegato.
+
+## Editor RGB del 9 settembre 2026
+
+- Aggiunti selettori nativi per tutti gli effetti Drevo/Razer già supportati, colori condizionali all’effetto, luminosità Drevo e parametri animati in un gruppo espandibile. Le impostazioni si salvano automaticamente; Applica profili invia alle periferiche incluse.
+- 47 test XCTest superati. Tre nuove regressioni verificano precedenza dell’applicazione manuale sui reinvii del wake, rifiuto durante lo stop e risultati parziali con esclusione delle periferiche disabilitate.
+- Build Release e installazione tramite schema nativo riuscite; firma verificata. Accessibilità e Monitoraggio input restano autorizzati.
+- Pagina RGB e stop verificata visivamente nell’app installata. Cambio mouse da Ciclo colori a Colore fisso mostra il controllo colore; Applica profili riporta invio riuscito a Drevo e Razer. Ripristinato Ciclo colori e riapplicati con successo i profili originali (Drevo statico fucsia, Razer spectrum).
+- La verifica hardware attesta il successo delle scritture USB dal nuovo pulsante. Non è stata richiesta una nuova conferma ottica dell’utente né provato fisicamente ogni effetto.
+
+## Sessione hardware dell’8 settembre 2026
+
+- Baseline XCTest Xcode: 34 test superati, nessun fallimento. Il runner richiede esecuzione fuori dal sandbox; il primo tentativo limitato non costituisce un fallimento dell’app.
+- App installata: Accessibilità e Monitoraggio input autorizzati; login registrato come attivo (non ancora provato con logout/login in questa sessione).
+- HID reale: Drevo presente con due interfacce, Razer con quattro. Interfaccia RGB Drevo accessibile, firmware Razer 2.0.
+- Ciclo CLI spento/acceso di due secondi riuscito su entrambe le periferiche e confermato visivamente dall’utente.
+- Striscia Triones selezionata: spegnimento e ritorno al fucsia confermati dall’utente. Un tentativo di riconnessione ha mostrato timeout; il successivo ha ottenuto conferma GATT. Non si considera dimostrata l’assenza di errori transitori BLE.
+- Stop completo alle 14:00:48, wake alle 14:01:22: utente conferma ripristino di tastiera e mouse, striscia rimasta accesa sulla versione precedente. Log: eventi schermo ravvicinati, Razer ripristinato alle 14:01:27; Drevo al settimo tentativo alle 14:01:43, reinvii completati alle 14:01:50.
+- Scollegamento/ricollegamento dock e cambio Space con entrambi i pulsanti: rilevamento e funzionamento confermati dall’utente.
+- Striscia senza alimentazione: timeout visibile e comandi riabilitati, nessun blocco UI. Rialimentata, connessione e colore nuovamente confermati da GATT.
+- Nuova automazione BLE: 44 test XCTest superati, inclusi dieci test per compatibilità JSON, persistenza e validazione dello stato richiesto, stato spento/sconosciuto, sovrapposizione schermo/sistema, limite tentativi, cancellazione manuale, disattivazione/rimozione, nuovo stop e ripristino disabilitato anche durante una riconnessione. Release firmata compilata e installata con identico requisito designato; entrambi i permessi conservati.
+- Automazione BLE attivata tramite UI e stato acceso memorizzato. Stop completo alle 14:18:07, spegnimento GATT confermato alle 14:18:08; sistema sveglio alle 14:18:22, schermi alle 14:18:23, striscia ripristinata alle 14:18:26. Utente conferma tutte le luci spente durante lo stop e ripristinate al risveglio. USB senza errori in questo ciclo, reinvii Drevo terminati alle 14:18:31. Precedente coppia stop/wake ravvicinata alle 14:17:56 recuperata senza comandi BLE obsoleti riportati nei log.
+- Spegnimento manuale striscia alle 14:19:03; stop 14:19:54 e wake 14:20:12: nessuna riaccensione BLE nei log e utente conferma striscia rimasta spenta, USB ripristinati. Drevo recuperata al terzo tentativo, sequenza conclusa alle 14:20:23.
+- Release finale reinstallata tramite schema nativo: firma verificata, impostazioni BLE persistenti (`requestedOn: false` dopo lo spegnimento manuale) e nessun invio BLE all’avvio. Ricerca reale trova lo stesso controller Triones; annullamento termina la ricerca e riabilita i controlli. Colore riapplicato con successo prima della prova schermi.
+- Soli schermi: `displaysDidSleep` alle 14:22:29, spegnimento BLE confermato alle 14:22:30; `displaysDidWake` alle 14:23:11, senza stop sistema. Primo tentativo BLE terminato in timeout alle 14:23:18, ripetizione automatica dopo due secondi e successo alle 14:23:22. Utente conferma tutte le luci spente e ripristinate. Anche il recupero da errore BLE transitorio è quindi verificato fisicamente. Drevo recuperata al terzo tentativo, Razer al primo. App lasciata in esecuzione con automazione BLE attiva e colore originale fucsia ripristinato.
+
+### Limiti delle verifiche dell’8 settembre
+
+Logout/login reale, revoca del permesso Bluetooth e indisponibilità BLE durante un intero ripristino automatico non provati fisicamente. Avvio al login verificato come registrazione attiva; tentativi limitati e cancellazioni del ripristino BLE coperti dai test simulati. La conferma fisica di uno stop riuscito non garantisce che macOS conceda sempre il tempo necessario alla scrittura Bluetooth.
+
 ## Funzionalità confermate
 
 - L'utente conferma il corretto funzionamento della gestione RGB attuale.

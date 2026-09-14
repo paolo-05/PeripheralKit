@@ -7,20 +7,84 @@ final class AppRuntime {
     private let system = SystemEventMonitor()
     private let actions: any ActionExecutor
     private let rgb: RGBSleepCoordinator
+    private let deskLight: DeskLightSleepCoordinator
     private var policy = SleepPolicy()
     private var powerTask: Task<Void, Never>?
+    private var preview: (Configuration, RGBProfileTarget)?
     private var captureTimeout: Task<Void, Never>?
 
     init(model: AppModel, actions: any ActionExecutor = ActionEngine()) {
         self.model = model
         self.actions = actions
         let diagnostics = model.diagnostics
+        deskLight = DeskLightSleepCoordinator(transport: model.lights) { message, error in
+            diagnostics.record(message, error: error, persistent: true)
+        }
         rgb = RGBSleepCoordinator { message, error in
             Task { @MainActor in diagnostics.record(message, error: error, persistent: true) }
         }
     }
 
     func start() {
+        bindModelActions()
+        bindInputEvents()
+        bindSystemEvents()
+        input.foregroundApplication = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        system.start()
+        updateConfiguration()
+        resumeSavedMouseCycleIfNeeded()
+    }
+
+    private func bindModelActions() {
+        model.previewCancelRequested = { [weak self] in
+            guard let self, let preview = self.preview else { return }
+            self.model.previewRequested?(nil, preview.1)
+        }
+        model.previewRequested = { [weak self] configuration, target in
+            guard let self else { return }
+            self.preview = configuration.map { ($0, target) }
+            let value = configuration ?? self.model.configuration.rgb
+            let previous = self.powerTask
+            self.powerTask = Task { [weak self] in
+                await previous?.value
+                guard let self else { return }
+                let result = await self.rgb.applyProfile(value, target: target)
+                if !result.succeeded { self.model.rgbApplyResult = result; self.model.errorMessage = result.failures.joined(separator: "\n") }
+            }
+        }
+        model.devicesChanged = { [weak self] before, after in
+            guard let self, self.model.hidGranted,
+                  self.model.configuration.restoreOnReconnect != false else { return }
+            let old = Set(before.map(\.id))
+            let targets = Set(after.lazy
+                .filter { !old.contains($0.id) }
+                .compactMap { RGBProfileTarget.matching($0)?.adapterID })
+            guard !targets.isEmpty else { return }
+            let configuration = self.preview?.0 ?? self.model.configuration.rgb
+            let previous = self.powerTask
+            self.powerTask = Task { [weak self] in
+                await previous?.value
+                await self?.rgb.reconnect(targets, configuration: configuration)
+            }
+        }
+        model.rgbApplyRequested = { [weak self] configuration, target in
+            guard let self, !self.model.rgbApplying else { return }
+            self.preview = nil
+            self.model.rgbApplying = true
+            self.model.rgbApplyResult = nil
+            let previous = self.powerTask
+            self.powerTask = Task { [weak self] in
+                await previous?.value
+                guard let self else { return }
+                var sent = configuration
+                if target == nil { sent.keyboard.enabled = true; sent.mouse.enabled = true }
+                let result = await self.rgb.applyProfile(sent, target: target)
+                self.model.rgbApplying = false
+                if self.model.configuration.rgb == configuration { self.model.rgbApplyResult = result }
+            }
+        }
+        model.deskLightRequested = { [weak self] light, on in self?.deskLight.manual(light, on: on) }
+        model.deskLightCancelRequested = { [weak self] in self?.deskLight.cancel() }
         model.testActionRequested = { [weak self] action in
             guard let self, !self.model.safeMode else { return }
             do {
@@ -41,6 +105,9 @@ final class AppRuntime {
                 }
             }
         }
+    }
+
+    private func bindInputEvents() {
         input.onButton = { [weak self] button in
             self?.model.lastButton = button
             self?.model.diagnostics.record("Pulsante mouse \(button)")
@@ -59,6 +126,9 @@ final class AppRuntime {
             } catch { self.model.report(error) }
         }
         input.onTapRecovery = { [weak self] in self?.model.diagnostics.record("Monitor mouse riattivato da macOS") }
+    }
+
+    private func bindSystemEvents() {
         system.onEvent = { [weak self] event in
             guard let self else { return }
             self.model.diagnostics.record("Sistema: \(event.rawValue)", persistent: event != .applicationChanged && event != .spaceChanged)
@@ -66,10 +136,16 @@ final class AppRuntime {
             self.policy.receive(event)
             self.updatePower()
         }
-        input.foregroundApplication = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        system.start()
-        updateConfiguration()
+    }
 
+    private func resumeSavedMouseCycleIfNeeded() {
+        guard model.hidGranted, model.configuration.restoreOnReconnect == false else { return }
+        let previous = powerTask
+        let configuration = model.configuration.rgb
+        Task { [weak self] in
+            await previous?.value
+            await self?.rgb.resumeSavedMouseCycle(configuration)
+        }
     }
 
     private func updateConfiguration() {
@@ -98,7 +174,13 @@ final class AppRuntime {
 
     private func updatePower() {
         let configuration = model.configuration
+        deskLight.update(configuration: configuration, policy: policy)
         let sleep = policy.shouldSleep(configuration: configuration)
+        if sleep && !model.rgbSleeping {
+            model.previewCancellation += 1
+            preview = nil
+        }
+        model.rgbSleeping = sleep
         let previous = powerTask
         let rgb = self.rgb
         // Preserve notification ordering across the actor boundary.
@@ -109,6 +191,9 @@ final class AppRuntime {
     }
 
     func stop() {
+        let rgb = self.rgb
+        Task { await rgb.shutdown() }
+        deskLight.cancel()
         captureTimeout?.cancel()
         input.stop()
         system.stop()

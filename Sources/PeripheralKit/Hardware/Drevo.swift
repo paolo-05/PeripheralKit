@@ -35,14 +35,6 @@ struct DrevoPacket: Equatable {
     }
 }
 
-private extension RGBColor {
-    init(red: UInt8, green: UInt8, blue: UInt8) {
-        self.red = red
-        self.green = green
-        self.blue = blue
-    }
-}
-
 final class DrevoTyrfingV2 {
     static let vendorID = 0x0416
     static let productID = 0xa0f8

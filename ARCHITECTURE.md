@@ -71,6 +71,30 @@ La sequenza segue CGEventCreateKeyboardEvent del SDK Apple, che richiede esplici
 
 ## Ripristino USB e identità stabile
 
+L’editor RGB mantiene bozze separate: Salva e applica salva il dispositivo selezionato con ConfigurationStore e invia uno snapshot immutabile tramite AppRuntime allo stesso RGBSleepCoordinator usato dagli eventi di alimentazione. L’actor rifiuta l’invio durante lo stop, invalida i reinvii del dispositivo scelto e preserva quelli dell’altro. Le scritture restano fuori dal MainActor. Il risultato non viene presentato come conferma di una bozza modificata dopo l’invio.
+
 La Drevo richiede due reinvii ritardati dopo il primo invio riuscito (attese aggiuntive di 2 e 5 secondi), riaprendo il dispositivo per ogni scrittura. Il coordinatore mantiene lo snapshot finché tutti i passaggi sono terminati; gli adapter procedono in task separati sullo stesso actor e un nuovo sleep invalida l'intera generazione. I log di alimentazione e invio RGB usano il livello notice per permettere diagnosi anche dopo una riapertura dell'app.
 
 Tutti i target riusano `PERIPHERALKIT_SIGNING_IDENTITY`. Il requisito designato combina bundle ID e certificato leaf; non include il cdhash specifico della build. Nessuna chiave nel repository, nessuna rigenerazione o firma ad hoc nel processo di build. La prima transizione di identità richiede nuovamente i consensi macOS.
+
+## Stop e ripristino della striscia BLE
+
+`AppRuntime` inoltra lo stesso stato combinato sistema/schermi a `DeskLightSleepCoordinator`, separato dall’actor USB e isolato sul MainActor come i delegate CoreBluetooth. `DeskLightTransport` permette test senza radio. Il controller espone l’esito della scrittura tramite callback; cancellazione e cambio generazione rendono inerti i callback superati.
+
+`DeskLightConfiguration` aggiunge campi opzionali `sleepEnabled`, `requestedOn` e `requestedColor`, compatibili con i file precedenti. Lo stato sconosciuto non viene interpretato come acceso. I comandi manuali memorizzano l’intento prima dell’invio e invalidano ogni ripristino. Si conserva l’ultimo colore richiesto, distinto dal colore scelto nella UI e non ancora applicato. Nessuna lettura dello stato fisico o sincronizzazione con l’app del telefono.
+
+Lo stop tenta uno spegnimento, senza bloccare la sospensione del Mac. Il wake attende almeno un secondo e permette tre tentativi, ciascuno limitato dal timeout BLE di 15 secondi, con due secondi fra i tentativi. La disattivazione, la rimozione del controller e nuovi eventi di stop annullano le operazioni precedenti. L’interruttore BLE è indipendente da `rgbEnabled`; le opzioni sistema/schermi e ripristino sono condivise.
+
+
+## Editor per dispositivo e gradiente software
+
+L’editor mantiene bozze separate per tastiera e mouse. Salva e applica salva soltanto la periferica selezionata; HEX non validi bloccano il comando. L’applicazione mirata invalida i reinvii del dispositivo scelto e riprogramma quelli ancora necessari per l’altro, preservandone lo snapshot. L’inclusione nell’automazione è distinta dall’applicazione manuale.
+
+La configurazione mouse aggiunge `spectrumColors` e `spectrumDurationSeconds` opzionali. `RGBGradient` valida 2–8 colori e 2–120 secondi, interpola i canali RGB e chiude il ciclo ultimo→primo. Senza palette il pacchetto Spectrum resta invariato. Con palette si invia il primo colore fisso e il coordinatore avvia un task con generazione separata dai reinvii tastiera. Il tempo di fase usa ContinuousClock; le scritture HID restano isolate nell’actor. Il loop si cancella prima dello spegnimento del mouse incluso, riparte dopo il ripristino e all’avvio dell’app per un gradiente salvato. La temporizzazione limita il carico USB; tre fallimenti consecutivi terminano il loop. Nessun frame viene registrato individualmente nei log.
+
+
+### Scene, zone e anteprima
+
+`RGBScene` conserva una Configuration e lo stato/colore BLE richiesto, senza legarsi a un identificatore di controller. `MouseConfiguration.logo` opzionale abilita una zona distinta; se assente segue `primary`, preservando i JSON precedenti. Il ciclo software calcola i frame per ogni zona animata e invia soltanto quelle zone, evitando di riavviare gli effetti firmware dell’altra.
+
+Le variazioni dell’inventario HID avviano ripristini con tentativi limitati nell’attore RGB. Le interfacce sono aggregate per adapter; i comandi rispettano la sequenza di alimentazione e sono rifiutati durante stop. L’anteprima è una bozza non persistita, accodata sullo stesso percorso; chiusura e stop invalidano anche i debounce pendenti. Le regole con condizione applicazione precedono quelle generali, mantenendo l’ordine interno.

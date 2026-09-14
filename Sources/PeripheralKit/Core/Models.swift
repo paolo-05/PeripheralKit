@@ -13,9 +13,7 @@ struct PeripheralDevice: Identifiable, Equatable, Sendable {
 
     var isMouse: Bool { usagePage == 1 && usage == 2 }
     var usbID: String { String(format: "%04x:%04x", vendorID, productID) }
-    var supportsRGB: Bool {
-        (vendorID == 0x0416 && productID == 0xa0f8) || (vendorID == 0x1532 && productID == 0x0084)
-    }
+    var supportsRGB: Bool { RGBProfileTarget.matching(self) != nil }
 }
 
 struct PeripheralDeviceReference: Codable, Equatable, Sendable {
@@ -78,7 +76,9 @@ struct InputEvent: Sendable {
 
 struct RuleEngine {
     func match(_ event: InputEvent, rules: [Rule]) -> Rule? {
-        rules.first { rule in
+        let ordered = rules.filter { $0.conditions.contains { if case .application = $0 { true } else { false } } }
+            + rules.filter { !$0.conditions.contains { if case .application = $0 { true } else { false } } }
+        return ordered.first { rule in
             rule.enabled && rule.trigger == event.trigger && rule.conditions.allSatisfy { condition in
                 switch condition {
                 case .device(let reference): return reference.matches(event.device)
@@ -97,6 +97,8 @@ struct AppConfiguration: Codable, Equatable, Sendable {
     var displaySleepEnabled = true
     var restoreOnWake = true
     var deskLight: DeskLightConfiguration?
+    var restoreOnReconnect: Bool?
+    var scenes: [RGBScene]?
     var rgb = Configuration()
     var rules: [Rule] = [
         Rule(name: "Space precedente", trigger: .mouseButton(4), actions: [.previousSpace]),
@@ -108,10 +110,32 @@ struct AppConfiguration: Codable, Equatable, Sendable {
         guard rgb.wakeDelaySeconds.isFinite, (0...30).contains(rgb.wakeDelaySeconds) else {
             throw PeripheralKitError.invalidConfiguration("Il ritardo di risveglio deve essere tra 0 e 30 secondi.")
         }
-        if let deskLight { _ = try RGBColor(hex: deskLight.color) }
+        if let deskLight {
+            _ = try RGBColor(hex: deskLight.color)
+            if let requestedColor = deskLight.requestedColor { _ = try RGBColor(hex: requestedColor) }
+        }
         _ = try RGBColor(hex: rgb.keyboard.color)
         _ = try RGBColor(hex: rgb.keyboard.secondaryColor)
         _ = try RGBColor(hex: rgb.mouse.color)
+        if let logo = rgb.mouse.logo {
+            _ = try RGBColor(hex: logo.color)
+            _ = try logo.effect()
+        }
+        if let colors = rgb.mouse.spectrumColors {
+            _ = try RGBGradient(colors: colors, duration: rgb.mouse.spectrumDurationSeconds ?? 12)
+        }
+        for scene in scenes ?? [] {
+            guard !scene.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw PeripheralKitError.invalidConfiguration("Dai un nome alla scena.")
+            }
+            var sample = AppConfiguration()
+            sample.rgb = scene.rgb
+            try sample.validate()
+            if let color = scene.deskColor { _ = try RGBColor(hex: color) }
+        }
+        guard Set((scenes ?? []).map(\.id)).count == (scenes ?? []).count else {
+            throw PeripheralKitError.invalidConfiguration("Scene duplicate.")
+        }
         guard Set(rules.map(\.id)).count == rules.count, rules.count <= 256 else {
             throw PeripheralKitError.invalidConfiguration("Regole duplicate o troppe regole (massimo 256).")
         }
@@ -143,4 +167,16 @@ struct DeskLightConfiguration: Codable, Equatable, Sendable {
     var identifier: UUID
     var name: String
     var color = "#FF00FF"
+    // Optional fields preserve configurations saved before sleep automation.
+    var sleepEnabled: Bool?
+    var requestedOn: Bool?
+    var requestedColor: String?
+}
+
+struct RGBScene: Identifiable, Codable, Equatable, Sendable {
+    var id = UUID()
+    var name: String
+    var rgb: Configuration
+    var deskColor: String?
+    var deskOn: Bool?
 }

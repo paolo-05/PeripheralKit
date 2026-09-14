@@ -2,7 +2,7 @@ import Foundation
 import IOKit
 import IOKit.hid
 
-enum RazerZone: UInt8, CaseIterable {
+enum RazerZone: UInt8, CaseIterable, Sendable {
     case scrollWheel = 0x01
     case logo = 0x04
 }
@@ -99,6 +99,11 @@ final class RazerDeathAdderV2 {
             throw PeripheralKitError.reportFailed("Razer DeathAdder V2 (lettura firmware)", result)
         }
         return "\(response[9]).\(response[10])"
+    }
+
+    func setEffect(_ effect: RazerEffect, zone: RazerZone) throws {
+        try send(RazerReport.lighting(effect, zone: zone))
+        Thread.sleep(forTimeInterval: 0.03)
     }
 
     func setEffect(_ effect: RazerEffect) throws {

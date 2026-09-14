@@ -2,6 +2,12 @@ import CoreBluetooth
 import Combine
 import Foundation
 
+@MainActor
+protocol DeskLightTransport: AnyObject {
+    func send(to id: UUID, on: Bool, color: RGBColor, completion: @escaping (Result<Void, Error>) -> Void)
+    func cancel()
+}
+
 /// Packets used by RGB-remote/LED_source.py (HappyLighting/Triones).
 enum HappyLightingPacket {
     static func power(_ on: Bool) -> Data { Data([0xCC, on ? 0x23 : 0x24, 0x33]) }
@@ -11,7 +17,7 @@ enum HappyLightingPacket {
 }
 
 @MainActor
-final class HappyLighting: NSObject, ObservableObject, @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate {
+final class HappyLighting: NSObject, ObservableObject, DeskLightTransport, @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate {
     struct Device: Identifiable { let id: UUID; let name: String }
     @Published private(set) var devices: [Device] = []
     @Published private(set) var busy = false
@@ -27,14 +33,19 @@ final class HappyLighting: NSObject, ObservableObject, @preconcurrency CBCentral
     private var started = false
     private var remainingServices = 0
     private var candidates: [CBCharacteristic] = []
+    private var completion: ((Result<Void, Error>) -> Void)?
 
     func scan() {
         guard !busy else { return }
         devices = []; scanning = true; begin()
     }
 
-    func send(to id: UUID, on: Bool, color: RGBColor) {
-        guard !busy else { return }
+    func send(to id: UUID, on: Bool, color: RGBColor, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard !busy else {
+            completion(.failure(PeripheralKitError.invalidConfiguration("Operazione Bluetooth già in corso.")))
+            return
+        }
+        self.completion = completion
         target = id
         packets = [HappyLightingPacket.power(on)]
         if on { packets.append(HappyLightingPacket.color(color)) }
@@ -136,14 +147,22 @@ final class HappyLighting: NSObject, ObservableObject, @preconcurrency CBCentral
         fail(error?.localizedDescription ?? "Striscia scollegata prima del completamento.")
     }
 
-    func cancel() { finish("Operazione annullata.") }
-    private func fail(_ message: String) { error = message; finish("Operazione non riuscita.") }
-    private func finish(_ message: String) {
+    func cancel() {
+        guard busy else { return }
+        finish("Operazione annullata.", result: .failure(CancellationError()))
+    }
+    private func fail(_ message: String) {
+        error = message
+        finish("Operazione non riuscita.", result: .failure(PeripheralKitError.invalidConfiguration(message)))
+    }
+    private func finish(_ message: String, result: Result<Void, Error> = .success(())) {
+        let callback = completion; completion = nil
         timeout?.cancel(); timeout = nil; busy = false; started = false
         central?.stopScan()
         let old = peripheral; peripheral = nil; old?.delegate = nil
         if let old { central?.cancelPeripheralConnection(old) }
         characteristic = nil; packets = []; candidates = []; target = nil
         status = message
+        callback?(result)
     }
 }

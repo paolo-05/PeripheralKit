@@ -1,5 +1,31 @@
 import Foundation
 
+enum RGBProfileTarget: String, CaseIterable, Sendable {
+    case keyboard, mouse
+
+    var adapterID: String {
+        switch self {
+        case .keyboard: "drevo-0416-a0f8"
+        case .mouse: "razer-1532-0084"
+        }
+    }
+
+    var usbID: (vendor: Int, product: Int) {
+        switch self {
+        case .keyboard: (0x0416, 0xa0f8)
+        case .mouse: (0x1532, 0x0084)
+        }
+    }
+
+    func matches(_ device: PeripheralDevice) -> Bool {
+        device.vendorID == usbID.vendor && device.productID == usbID.product
+    }
+
+    static func matching(_ device: PeripheralDevice) -> Self? {
+        allCases.first { $0.matches(device) }
+    }
+}
+
 enum PowerState: String, Sendable {
     case awake
     case sleeping
@@ -17,14 +43,16 @@ protocol RGBDeviceAdapter: Sendable {
     var wakeReapplyDelays: [Double] { get }
     func isEnabled(in configuration: Configuration) -> Bool
     func apply(_ state: PowerState, configuration: Configuration) throws
+    func applyFrame(_ configuration: Configuration, zones: [RazerZone]) throws
 }
 
 extension RGBDeviceAdapter {
     var wakeReapplyDelays: [Double] { [] }
+    func applyFrame(_ configuration: Configuration, zones: [RazerZone]) throws { try apply(.awake, configuration: configuration) }
 }
 
 struct DrevoRGBAdapter: RGBDeviceAdapter {
-    let id = "drevo-0416-a0f8"
+    let id = RGBProfileTarget.keyboard.adapterID
     let name = "Drevo Tyrfing V2"
     // A USB write can succeed before the keyboard firmware finishes waking.
     // Reopen the endpoint and reapply after it has had time to settle.
@@ -39,24 +67,24 @@ struct DrevoRGBAdapter: RGBDeviceAdapter {
 }
 
 struct RazerRGBAdapter: RGBDeviceAdapter {
-    let id = "razer-1532-0084"
+    let id = RGBProfileTarget.mouse.adapterID
     let name = "Razer DeathAdder V2"
     func isEnabled(in configuration: Configuration) -> Bool { configuration.mouse.enabled }
+    func applyFrame(_ configuration: Configuration, zones: [RazerZone]) throws {
+        let mouse = RazerDeathAdderV2()
+        defer { mouse.disconnect() }
+        try mouse.connect()
+        for zone in zones {
+            let profile = zone == .logo ? configuration.mouse.logo ?? configuration.mouse.primary : configuration.mouse.primary
+            try mouse.setEffect(profile.effect(), zone: zone)
+        }
+    }
     func apply(_ state: PowerState, configuration: Configuration) throws {
         let mouse = RazerDeathAdderV2()
         defer { mouse.disconnect() }
         try mouse.connect()
-        let effect: RazerEffect
-        if state == .sleeping { effect = .off }
-        else {
-            let color = try RGBColor(hex: configuration.mouse.color)
-            switch configuration.mouse.mode {
-            case .spectrum: effect = .spectrum
-            case .static: effect = .static(color)
-            case .breathing: effect = .breathing(color)
-            }
-        }
-        try mouse.setEffect(effect)
+        try mouse.setEffect(state == .sleeping ? .off : configuration.mouse.primary.effect(), zone: .scrollWheel)
+        try mouse.setEffect(state == .sleeping ? .off : (configuration.mouse.logo ?? configuration.mouse.primary).effect(), zone: .logo)
     }
 }
 

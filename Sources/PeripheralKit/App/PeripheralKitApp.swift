@@ -81,6 +81,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(NSMenuItem(title: model.lights.error ?? model.lights.status, action: nil, keyEquivalent: ""))
             menu.addItem(.separator())
         }
+        if let scenes = model.configuration.scenes, !scenes.isEmpty {
+            let item = NSMenuItem(title: "Scene RGB", action: nil, keyEquivalent: "")
+            let submenu = NSMenu()
+            for scene in scenes {
+                let entry = NSMenuItem(title: scene.name, action: #selector(applyScene(_:)), keyEquivalent: "")
+                entry.target = self
+                entry.representedObject = scene.id.uuidString
+                entry.isEnabled = !model.rgbSleeping && !model.rgbApplying && !model.lights.busy
+                submenu.addItem(entry)
+            }
+            item.submenu = submenu
+            menu.addItem(item)
+        }
         let settings = NSMenuItem(title: "Impostazioni…", action: #selector(showSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
@@ -88,6 +101,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(quit)
     }
 
+    @objc func applyScene(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String,
+              let scene = model.configuration.scenes?.first(where: { $0.id.uuidString == id }) else { return }
+        model.applyScene(scene)
+    }
     @objc func deskLightsOn() { model.setDeskLight(on: true) }
     @objc func deskLightsOff() { model.setDeskLight(on: false) }
     @objc func toggleRemapping() { model.configuration.remappingEnabled.toggle() }
@@ -111,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showSettings(); return true }
-    func windowWillClose(_ notification: Notification) { model.cancelRecording() }
+    func windowWillClose(_ notification: Notification) { model.cancelRecording(); model.previewCancellation += 1; model.previewCancelRequested?() }
     func applicationWillTerminate(_ notification: Notification) { runtime?.stop() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }

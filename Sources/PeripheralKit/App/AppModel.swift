@@ -8,6 +8,7 @@ final class AppModel: ObservableObject {
     @Published var configuration = AppConfiguration() {
         didSet {
             guard !loading else { return }
+            if oldValue.rgb != configuration.rgb { rgbApplyResult = nil }
             do {
                 guard !configurationReadFailed else { throw PeripheralKitError.invalidConfiguration("Configurazione non salvata: correggi il file indicato e riapri l'app.") }
                 try store.save(configuration)
@@ -25,13 +26,23 @@ final class AppModel: ObservableObject {
     @Published var inputStatus = "Rimappatura disattivata"
     @Published var recording = false
     @Published var lastButton: Int?
+    @Published var previewCancellation = 0
+    @Published var rgbApplying = false
+    @Published var rgbSleeping = false
+    @Published var rgbApplyResult: ApplyResult?
     let lights = HappyLighting()
     let diagnostics = Diagnostics()
     let safeMode: Bool
     let store = ConfigurationStore()
+    var devicesChanged: (([PeripheralDevice], [PeripheralDevice]) -> Void)?
+    var previewCancelRequested: (() -> Void)?
+    var previewRequested: ((Configuration?, RGBProfileTarget) -> Void)?
     var configurationChanged: (() -> Void)?
     var testActionRequested: ((Action) -> Void)?
     var captureRequested: ((Bool) -> Void)?
+    var deskLightRequested: ((DeskLightConfiguration, Bool) -> Void)?
+    var deskLightCancelRequested: (() -> Void)?
+    var rgbApplyRequested: ((Configuration, RGBProfileTarget?) -> Void)?
     private var loading = true
     private var configurationReadFailed = false
     private var refreshTask: Task<Void, Never>?
@@ -54,6 +65,39 @@ final class AppModel: ObservableObject {
     }
 
     var remappingActive: Bool { configuration.remappingEnabled && !safeMode && accessibilityGranted }
+
+    func applyRGBProfile(target: RGBProfileTarget? = nil) {
+        guard !rgbApplying, !rgbSleeping else { return }
+        do {
+            guard !configurationReadFailed else {
+                throw PeripheralKitError.invalidConfiguration("Correggi la configurazione e riapri l’app prima di applicare il profilo.")
+            }
+            try configuration.validate()
+            try store.save(configuration)
+            guard target != nil || configuration.rgb.keyboard.enabled || configuration.rgb.mouse.enabled else { return }
+            rgbApplyRequested?(configuration.rgb, target)
+        } catch { report(error) }
+    }
+
+    func saveScene(name: String) {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let light = configuration.deskLight
+        let scene = RGBScene(name: name, rgb: configuration.rgb,
+                             deskColor: light?.requestedColor ?? light?.color, deskOn: light?.requestedOn)
+        configuration.scenes = (configuration.scenes ?? []) + [scene]
+    }
+
+    func applyScene(_ scene: RGBScene) {
+        guard !rgbSleeping, !rgbApplying, !lights.busy else { return }
+        var next = configuration
+        next.rgb = scene.rgb
+        if let color = scene.deskColor { next.deskLight?.color = color }
+        configuration = next
+        // A scene explicitly targets both USB devices, regardless of sleep inclusion.
+        rgbApplyRequested?(configuration.rgb, nil)
+        if let on = scene.deskOn { setDeskLight(on: on) }
+    }
 
     func startRefreshing() {
         refreshTask = Task { [weak self] in
@@ -110,7 +154,11 @@ final class AppModel: ObservableObject {
             let before = Set(devices.map(\.id)), after = Set(found.map(\.id))
             for device in found where !before.contains(device.id) { diagnostics.record("HID collegato: \(device.productName) [\(device.usbID)]") }
             for device in devices where !after.contains(device.id) { diagnostics.record("HID scollegato: \(device.productName)") }
-            if devices != found { devices = found }
+            if devices != found {
+                let previous = devices
+                devices = found
+                devicesChanged?(previous, found)
+            }
         } catch { report(error) }
     }
 
@@ -121,9 +169,14 @@ final class AppModel: ObservableObject {
     }
 
     func setDeskLight(on: Bool) {
-        guard let light = configuration.deskLight else { return }
-        do { lights.send(to: light.identifier, on: on, color: try RGBColor(hex: light.color)) }
-        catch { report(error) }
+        guard var light = configuration.deskLight, !lights.busy else { return }
+        do {
+            _ = try RGBColor(hex: light.color)
+            light.requestedOn = on
+            light.requestedColor = light.color
+            configuration.deskLight = light
+            deskLightRequested?(light, on)
+        } catch { report(error) }
     }
 
     func recordButton() { recording = true; captureRequested?(true) }
