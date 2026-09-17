@@ -1,106 +1,170 @@
-# Verifiche di PeripheralKit — 6 settembre 2026
+# PeripheralKit verification record
 
-## Scene, zone e riconnessione, 13 settembre 2026
+This file distinguishes automated coverage from observations made with physical
+hardware. A successful IOKit or GATT write confirms transport completion, not
+the optical state of an LED.
 
-- Conferma fisica dell’utente: gradiente Razer a cinque colori regolare su entrambe le zone; stop completo e risveglio ripristinano tastiera, mouse, striscia e ciclo software.
-- Nuova Release installata con permessi conservati. Dock scollegato e ricollegato: profili USB e gradiente recuperati automaticamente, pulsanti laterali e cambio Space confermati dall’utente.
-- Anteprima hardware: logo rosso fisso e rotella con gradiente confermati dall’utente. Il JSON mantiene il profilo originale; Annulla ripristina il gradiente su entrambe le zone, confermato fisicamente.
-- Scena “Scrivania” creata dai profili salvati; applicazione UI riuscita, log USB per Drevo/Razer e conferma Bluetooth del controller. Questa scena viene conservata come configurazione iniziale utile.
-- Selettore nativo app verificato: assegnazione associata ad Automator, poi riportata a Tutte le app. Regole originali conservate. Precedenza e fallback verificati con XCTest, senza generare input sintetici verso altre app.
-- Test automatici includono riconnessione con errori transitori, assenza di riaccensione durante stop, compatibilità scene/zone e interpolazione per zona. **61 test XCTest superati**, nessun fallimento o test saltato. Release finale firmata e installata; permessi conservati.
-- Non eseguiti logout/login reale o test prolungati di ore.
+## Current automated verification
 
-## Editor per dispositivo e gradiente, 9 settembre 2026
+The public-repository preparation fixed the Xcode test target so that it uses
+the production types compiled directly into `PeripheralKitTests`. The canonical
+command is the same command used by `.github/workflows/ci.yml`:
 
-- Editor riorganizzato con selezione tastiera/mouse, anteprima schematica, lista effetti, palette/HEX e slider. Illuminazione separata da Stop e risveglio; footer persistente con Salva e applica e Annulla modifiche.
-- Bozze separate verificate: palette blu in anteprima mentre il JSON conserva il fucsia salvato; HEX non valido disabilita Salva e applica; annullamento ripristina il valore precedente. Permessi conservati dopo installazione della Release firmata.
-- Applicazione mirata: test di invio alla sola periferica scelta, anche esclusa dall’automazione, e conservazione del ripristino pendente dell’altra periferica.
-- Aggiunto Spectrum completo o Gradiente personalizzato sul mouse: 2–8 colori, riordino, HEX, durata 2–120 secondi, anteprima animata e interpolazione ciclica ultimo→primo. Il gradiente è software e richiede l’app aperta; il comando firmware Spectrum resta invariato senza palette.
-- **54 test XCTest superati**, inclusi interpolazione e chiusura del ciclo, validazione/compatibilità/persistenza, limite errori USB, cancellazione per stop e sostituzione con colore fisso.
-- Interfaccia del gradiente verificata nell’app installata: aggiunta e riordino dei colori, blocco HEX non valido e annullamento. Nessuna palette di prova salvata; conservato Spectrum completo.
-- Verifica hardware finale non eseguita: la CLI rileva zero interfacce HID sia Drevo sia Razer. La progressione fisica dei colori e lo stop/risveglio con gradiente software restano da confermare quando il mouse è collegato.
+```sh
+xcodebuild \
+  -project PeripheralKit.xcodeproj \
+  -scheme PeripheralKit \
+  -destination 'platform=macOS' \
+  test \
+  CODE_SIGNING_ALLOWED=NO
+```
 
-## Editor RGB del 9 settembre 2026
+The tests use in-memory Quartz event collectors and mocked USB/Bluetooth
+transports. They do not post global input, access the real settings file, or
+require connected hardware.
 
-- Aggiunti selettori nativi per tutti gli effetti Drevo/Razer già supportati, colori condizionali all’effetto, luminosità Drevo e parametri animati in un gruppo espandibile. Le impostazioni si salvano automaticamente; Applica profili invia alle periferiche incluse.
-- 47 test XCTest superati. Tre nuove regressioni verificano precedenza dell’applicazione manuale sui reinvii del wake, rifiuto durante lo stop e risultati parziali con esclusione delle periferiche disabilitate.
-- Build Release e installazione tramite schema nativo riuscite; firma verificata. Accessibilità e Monitoraggio input restano autorizzati.
-- Pagina RGB e stop verificata visivamente nell’app installata. Cambio mouse da Ciclo colori a Colore fisso mostra il controllo colore; Applica profili riporta invio riuscito a Drevo e Razer. Ripristinato Ciclo colori e riapplicati con successo i profili originali (Drevo statico fucsia, Razer spectrum).
-- La verifica hardware attesta il successo delle scritture USB dal nuovo pulsante. Non è stata richiesta una nuova conferma ottica dell’utente né provato fisicamente ogni effetto.
+On September 17, 2026, the command completed with **61 passed tests, 0 failures,
+and 0 skipped tests** on arm64 macOS. The application also built successfully
+with code signing disabled. A redundant, unassigned 1024×1024 icon that duplicated
+the assigned 512@2x asset was removed from the catalog.
 
-## Sessione hardware dell’8 settembre 2026
+The SwiftPM compatibility path was verified separately with `swift test`: the
+same 61 XCTest cases passed with no failures.
 
-- Baseline XCTest Xcode: 34 test superati, nessun fallimento. Il runner richiede esecuzione fuori dal sandbox; il primo tentativo limitato non costituisce un fallimento dell’app.
-- App installata: Accessibilità e Monitoraggio input autorizzati; login registrato come attivo (non ancora provato con logout/login in questa sessione).
-- HID reale: Drevo presente con due interfacce, Razer con quattro. Interfaccia RGB Drevo accessibile, firmware Razer 2.0.
-- Ciclo CLI spento/acceso di due secondi riuscito su entrambe le periferiche e confermato visivamente dall’utente.
-- Striscia Triones selezionata: spegnimento e ritorno al fucsia confermati dall’utente. Un tentativo di riconnessione ha mostrato timeout; il successivo ha ottenuto conferma GATT. Non si considera dimostrata l’assenza di errori transitori BLE.
-- Stop completo alle 14:00:48, wake alle 14:01:22: utente conferma ripristino di tastiera e mouse, striscia rimasta accesa sulla versione precedente. Log: eventi schermo ravvicinati, Razer ripristinato alle 14:01:27; Drevo al settimo tentativo alle 14:01:43, reinvii completati alle 14:01:50.
-- Scollegamento/ricollegamento dock e cambio Space con entrambi i pulsanti: rilevamento e funzionamento confermati dall’utente.
-- Striscia senza alimentazione: timeout visibile e comandi riabilitati, nessun blocco UI. Rialimentata, connessione e colore nuovamente confermati da GATT.
-- Nuova automazione BLE: 44 test XCTest superati, inclusi dieci test per compatibilità JSON, persistenza e validazione dello stato richiesto, stato spento/sconosciuto, sovrapposizione schermo/sistema, limite tentativi, cancellazione manuale, disattivazione/rimozione, nuovo stop e ripristino disabilitato anche durante una riconnessione. Release firmata compilata e installata con identico requisito designato; entrambi i permessi conservati.
-- Automazione BLE attivata tramite UI e stato acceso memorizzato. Stop completo alle 14:18:07, spegnimento GATT confermato alle 14:18:08; sistema sveglio alle 14:18:22, schermi alle 14:18:23, striscia ripristinata alle 14:18:26. Utente conferma tutte le luci spente durante lo stop e ripristinate al risveglio. USB senza errori in questo ciclo, reinvii Drevo terminati alle 14:18:31. Precedente coppia stop/wake ravvicinata alle 14:17:56 recuperata senza comandi BLE obsoleti riportati nei log.
-- Spegnimento manuale striscia alle 14:19:03; stop 14:19:54 e wake 14:20:12: nessuna riaccensione BLE nei log e utente conferma striscia rimasta spenta, USB ripristinati. Drevo recuperata al terzo tentativo, sequenza conclusa alle 14:20:23.
-- Release finale reinstallata tramite schema nativo: firma verificata, impostazioni BLE persistenti (`requestedOn: false` dopo lo spegnimento manuale) e nessun invio BLE all’avvio. Ricerca reale trova lo stesso controller Triones; annullamento termina la ricerca e riabilita i controlli. Colore riapplicato con successo prima della prova schermi.
-- Soli schermi: `displaysDidSleep` alle 14:22:29, spegnimento BLE confermato alle 14:22:30; `displaysDidWake` alle 14:23:11, senza stop sistema. Primo tentativo BLE terminato in timeout alle 14:23:18, ripetizione automatica dopo due secondi e successo alle 14:23:22. Utente conferma tutte le luci spente e ripristinate. Anche il recupero da errore BLE transitorio è quindi verificato fisicamente. Drevo recuperata al terzo tentativo, Razer al primo. App lasciata in esecuzione con automazione BLE attiva e colore originale fucsia ripristinato.
+## Scenes, zones, and reconnection — September 13, 2026
 
-### Limiti delle verifiche dell’8 settembre
+- A five-color Razer gradient was physically confirmed as smooth on both zones.
+  Full sleep and wake restored keyboard, mouse, desk strip, and software cycle.
+- A newly installed Release retained permissions. After dock disconnect and
+  reconnect, USB profiles and the gradient returned automatically; side-button
+  Space switching was confirmed.
+- Hardware preview was confirmed with a static red logo and wheel gradient. The
+  saved JSON stayed unchanged, and cancelling restored the saved two-zone
+  gradient.
+- A “Desk” scene applied the saved USB profiles and desk-strip state. USB logs
+  and the controller's Bluetooth acknowledgement were observed.
+- The native application picker was tested with an Automator-specific rule and
+  then restored to All Applications. Precedence and fallback were also covered
+  without emitting synthetic input to other apps.
+- The suite at that milestone contained 61 passing XCTest cases, including
+  transient reconnection, no wake during sleep, scene/zone compatibility, and
+  per-zone interpolation.
+- A real logout/login cycle and multi-hour endurance run were not performed.
 
-Logout/login reale, revoca del permesso Bluetooth e indisponibilità BLE durante un intero ripristino automatico non provati fisicamente. Avvio al login verificato come registrazione attiva; tentativi limitati e cancellazioni del ripristino BLE coperti dai test simulati. La conferma fisica di uno stop riuscito non garantisce che macOS conceda sempre il tempo necessario alla scrittura Bluetooth.
+## Per-device editor and custom gradient — September 9, 2026
 
-## Funzionalità confermate
+- The editor was reorganized around keyboard/mouse selection, schematic preview,
+  effect list, palette/HEX controls, sliders, and persistent Save/Discard actions.
+- Independent drafts, invalid-HEX blocking, cancellation, and targeted device
+  application were verified. Applying a device excluded from sleep automation
+  remained supported without cancelling the other device's pending restore.
+- Full Spectrum and a 2–8 color custom gradient were added. The software gradient
+  requires the application to remain open; the firmware Spectrum command remains
+  unchanged when no palette exists.
+- The milestone suite contained 54 passing XCTest cases covering cyclic
+  interpolation, validation, persistence, USB error limits, sleep cancellation,
+  and replacement by a fixed color.
+- The installed UI was checked, but the final physical gradient run was deferred
+  because neither supported HID interface was connected in that session.
 
-- L'utente conferma il corretto funzionamento della gestione RGB attuale.
-- Il servizio precedente non è caricato e la sua registrazione è assente.
-- Il JSON PeripheralKit contiene i profili RGB e le regole mouse attivi; viene conservato durante aggiornamento e pulizia.
-- Le scorciatoie macOS Ctrl+←/→ risultano abilitate e corrispondono alle azioni configurate.
+## RGB editor — September 9, 2026
 
-## Correzione cambio Space
+- Native selectors were added for every supported Drevo/Razer effect, including
+  conditional color controls, Drevo brightness, and animation parameters.
+- The milestone suite contained 47 passing tests. New regressions covered manual
+  application taking precedence over wake retries, refusal during sleep, and
+  partial results when a device is excluded.
+- Release build, native-scheme installation, signing, and retained permissions
+  succeeded.
+- The installed UI switched the mouse between Spectrum and Static and reported
+  successful writes to both devices. The original profiles were restored.
+- Transport writes were verified; every visual effect was not individually
+  confirmed by the user.
 
-- Invio degli eventi spostato al livello HID, prima dell'elaborazione delle scorciatoie di sessione.
-- Controllo del permesso di pubblicare eventi; errore esplicito se macOS lo nega.
-- Prova manuale delle due direzioni nella pagina Mouse e diagnostica distinta fra invio e notifica spaceChanged.
-- Regressioni per destinazione HID, coppie di eventi, modificatori, rifiuto dell'invio e conservazione della configurazione RGB.
-- I test Quartz raccolgono gli eventi in memoria, senza pubblicare input globale.
+## Hardware session — September 8, 2026
 
-## Flusso Xcode
+- The Xcode baseline contained 34 passing tests.
+- Accessibility and Input Monitoring were authorized. Launch at login was
+  registered but a real logout/login was not performed.
+- The real HID inventory found two Drevo interfaces and four Razer interfaces.
+  The Drevo RGB endpoint was accessible and Razer firmware reported 2.0.
+- A two-second CLI off/on cycle succeeded on both USB devices and was visually
+  confirmed.
+- A Triones strip powered off and returned to magenta. One connection attempt
+  timed out; the next received a GATT acknowledgement, demonstrating that
+  transient Bluetooth errors remain possible.
+- During a full sleep/wake cycle, the user confirmed keyboard and mouse restore.
+  Razer restored first; Drevo recovered on its seventh bounded attempt and
+  completed its additional sends.
+- Dock disconnect/reconnect, side buttons, and Space switching were physically
+  confirmed.
+- With the strip unpowered, timeout was visible and the UI remained responsive.
+  After power returned, connection and color were acknowledged again.
+- BLE automation tests brought the suite to 44 cases, covering JSON compatibility,
+  requested-state persistence, overlapping display/system sleep, bounded retry,
+  manual cancellation, disabling/removal, new sleep, and disabled restoration.
+- A later full sleep powered the strip off before suspension and restored it
+  after wake. The user confirmed all lights off during sleep and restored after
+  wake. A manually powered-off strip correctly stayed off through another cycle.
+- A display-only sleep produced one Bluetooth timeout, then an automatic retry
+  succeeded. The user confirmed all lights off and restored.
 
-Schemi condivisi per sviluppo/test/Archive e installazione con Copy Files e launcher Swift. Firma locale senza portachiavi dedicato; nessuno script shell nel lifecycle. Le verifiche precedenti di build, installazione e ⌘R sono riuscite.
+### Limits of the September 8 session
 
-## Verifiche fisiche
+Bluetooth permission revocation, Bluetooth being unavailable for an entire
+automatic restore, and a real logout/login were not tested. Simulated tests cover
+bounded retries and cancellation, but one successful sleep cycle does not prove
+that macOS will always leave enough time for a Bluetooth write.
 
-Il funzionamento RGB è confermato dall'utente. Restano da confermare il cambio Space con i pulsanti fisici dopo questa correzione, il mantenimento dei permessi dopo aggiornamento e l'avvio al login. La prova deve avvenire su un desktop con uno Space adiacente nella direzione scelta.
+## Space-switching correction
 
-## Risultato della build aggiornata
+- Synthetic events were moved to the HID event tap, before session shortcut
+  processing.
+- Event-posting permission is checked and failure is explicit.
+- The UI exposes both directions and diagnostics distinguish “shortcut sent”
+  from the independent `spaceChanged` notification.
+- Regression tests cover the HID destination, complete key pairs, modifier order,
+  denied posting, and preservation of RGB configuration.
+- Quartz tests collect events in memory and never publish global input.
 
-- Xcode XCTest: 29 test superati, 0 falliti (rimossi quattro test della migrazione completata, aggiunte due regressioni dell'invio).
-- Build Release, installazione tramite PeripheralKit Install e Archive riusciti; firma del bundle verificata con codesign.
-- UI installata verificata: nessun banner di migrazione, controlli Prova cambio Space presenti, configurazione RGB e mappature preservate.
-- L’utente ha riabilitato Accessibilità e Monitoraggio input. La prima prova UI del solo cambio di destinazione HID non ha confermato spaceChanged: non è stata dichiarata risolta. Nessun permesso è stato concesso automaticamente.
-- Nessun riferimento al vecchio nome nei file versionati attuali. Componenti dismessi spostati nel Cestino; impostazioni correnti preservate.
+The milestone suite contained 29 passing tests after obsolete migration tests
+were removed and the posting regressions were added. Release build, installation,
+archive, bundle signing, and the installed UI were checked. macOS required the
+user to reauthorize permissions after the signing transition.
 
-- Completata anche la sequenza esplicita dei modificatori richiesta dal SDK, con test del rilascio in ordine inverso. Suite Xcode nuovamente superata: 29 test.
-- La conferma fisica della sequenza completa rimane da ottenere dopo l’aggiornamento; la firma locale può richiedere un nuovo consenso macOS.
+## Persistent signing and keyboard restore — September 7, 2026
 
-## Aggiornamento del 7 settembre: firma e tastiera
+- A persistent local certificate was created in the login keychain with explicit
+  user consent. No certificate or key entered the repository.
+- Debug and Release had different CDHashes but the same designated requirement
+  based on bundle identifier and leaf certificate.
+- The milestone suite contained 32 passing tests, including recovery after five
+  initial failures, Drevo sends independent from the mouse, and cancellation by
+  a new sleep.
+- Drevo reopened HID and resent the profile twice after first success. Each stage
+  had at most seven attempts.
+- Replacing an authorized Debug build with Release preserved both Accessibility
+  and Input Monitoring grants.
+- In a physical run, four Drevo IOKit failures were followed by recovery; Razer
+  restored independently. The user confirmed that the keyboard lit again.
 
-- Creato, con consenso esplicito dell’utente, un certificato locale persistente nel portachiavi login. Attendibilità limitata alla firma del codice; nessuna chiave nel repository.
-- Debug e Release verificati con codesign: CDHash differenti, identico requisito designato (bundle ID + certificato leaf).
-- Tutti i target Xcode usano la medesima identità; eliminato il ripiego automatico sulla firma ad hoc.
-- 32 test XCTest superati: incluso il ripristino dopo cinque errori iniziali, reinvii Drevo indipendenti dal mouse e annullamento dei reinvii dopo un nuovo sleep.
-- La tastiera riapre HID e reinvia il profilo due volte dopo il primo successo; ogni passaggio ha un massimo di sette tentativi. Lo snapshot resta fino al termine della sequenza.
-- I log di alimentazione e ripristino RGB sono persistenti nel log unificato per la diagnosi dopo un riavvio dell’app.
-- L’utente conferma la riaccensione fisica della tastiera dopo la prova sleep/wake del 7 settembre. Il successo USB, da solo, non costituisce una lettura dello stato dei LED.
+## HappyLighting BLE — September 7, 2026
 
-- Verifica reale dei permessi: l’utente ha autorizzato la prima build firmata (Debug). Sostituita con Release, che ha CDHash diverso, e riaperta: Accessibilità e Monitoraggio input ancora autorizzati, rimappatura attiva, nessun nuovo consenso richiesto.
-- Build Release, Archive e installazione finali completati con il certificato locale; firma verificata.
+- Native CoreBluetooth discovery, selection, persistent color, power control,
+  and menu-bar actions were added.
+- The milestone suite contained 34 passing tests, including packet bytes checked
+  against the previously working Python script and optional-configuration
+  compatibility.
+- The Xcode Debug target built with the local identity.
+- The initial sandboxed run could not create Quartz events for three existing
+  tests; outside the sandbox, the entire suite passed.
+- No physical BLE test had yet been performed at this milestone; those checks
+  were completed in the September 8 session above.
 
-- Prova hardware reale alle 21:13–21:14: primo invio Drevo alle 21:13:59, quattro errori IOKit 0xe00002e2 durante il secondo passaggio, recupero alle 21:14:05 e ultimo reinvio alle 21:14:10. Mouse ripristinato indipendentemente alle 21:13:59. L’utente ha confermato «La tastiera si riaccende».
+## Remaining physical checks
 
-## HappyLighting BLE, 7 settembre
-
-- Aggiunti controllo nativo CoreBluetooth, ricerca e selezione della striscia, colore persistente, accensione/spegnimento e azioni nella barra menu.
-- Suite SwiftPM con toolchain Xcode: **34 test superati**. Nuove verifiche dei pacchetti contro lo script Python funzionante e della compatibilità/validazione della configurazione opzionale.
-- Build Debug del target Xcode PeripheralKit firmata con l’identità locale: riuscita, output in `/tmp/peripheralkit-happylighting-xcode/Debug/PeripheralKit.app`.
-- La prima esecuzione dei test nel sandbox non poteva creare eventi Quartz per tre test preesistenti; rieseguita fuori dal sandbox, tutta la suite passa.
-- Nessuna prova BLE fisica né verifica visuale della nuova pagina effettuata. Da verificare: consenso Bluetooth, ricerca/selezione del controller, accensione, colore, spegnimento, timeout con striscia non alimentata. L’app installata non è stata sostituita.
+- A real logout/login launch test.
+- Long-duration custom-gradient operation and repeated sleep cycles.
+- Bluetooth permission revocation and recovery.
+- Additional firmware revisions and controllers sold under the same product
+  names.

@@ -1,0 +1,10 @@
+// Portable defaults used by every checkout.
+PERIPHERALKIT_INSTALL_DIR = $(HOME)/Applications
+
+// Ad-hoc signing keeps development builds portable. Copy Local.xcconfig.example
+// to Local.xcconfig and select a persistent identity to preserve macOS privacy
+// grants across rebuilds.
+PERIPHERALKIT_SIGNING_IDENTITY = -
+
+// Optional machine-local overrides. This file is intentionally ignored by Git.
+#include? "Local.xcconfig"

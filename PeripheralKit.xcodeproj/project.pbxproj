@@ -308,9 +308,9 @@
 			);
 		};
 		"5CC0AAF341BEA46B6290A18F" = {
-			"path" = "Configuration/Local.xcconfig";
+			"path" = "Configuration/Defaults.xcconfig";
 			"isa" = "PBXFileReference";
-			"name" = "Local.xcconfig";
+			"name" = "Defaults.xcconfig";
 			"lastKnownFileType" = "text.xcconfig";
 			"sourceTree" = "SOURCE_ROOT";
 		};

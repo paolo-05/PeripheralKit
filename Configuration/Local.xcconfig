@@ -1,6 +1,0 @@
-// Local installation destination, used by the native Xcode Copy Files phase.
-PERIPHERALKIT_INSTALL_DIR = $(HOME)/Applications
-
-// Reuse this identity across Debug, Release and installed builds.
-// Deliberately do not fall back to ad hoc: that would invalidate privacy grants.
-PERIPHERALKIT_SIGNING_IDENTITY = PeripheralKit Local Development

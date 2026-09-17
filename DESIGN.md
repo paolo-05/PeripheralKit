@@ -1,8 +1,19 @@
 # PeripheralKit design
 
-Utility aperta per pochi minuti alla scrivania, di giorno o la sera: segue l'aspetto chiaro/scuro scelto in macOS.
+PeripheralKit is opened briefly at a desk, during the day or at night. It follows
+the system light or dark appearance.
 
-SwiftUI Form raggruppati, List laterale, font di sistema e colori semantici di sistema. Accento di sistema limitato a controlli e selezione. Nessuna animazione decorativa, dashboard o card ripetute. Sidebar da circa 180 punti, finestra ridimensionabile, contenuti scorrevoli. Testi italiani, errori visibili e azioni recuperabili.
+The interface uses grouped SwiftUI forms, a sidebar list, system typography, and
+semantic colors. Accent color is limited to controls and selection. There are no
+decorative animations, dashboard chrome, or repeated card containers. The window
+is resizable, the sidebar is compact, content scrolls, errors remain visible, and
+actions are recoverable. The current application UI is written in Italian; the
+repository and contributor documentation are in English.
 
-
-L’editor RGB segue il flusso dei configuratori periferiche Windows: selezione dispositivo, anteprima schematica, lista effetti e pannello colore/slider. Conserva font e colori semantici macOS. Illuminazione e stop sono schede separate; le bozze diventano persistenti soltanto con Salva e applica. Anteprime esplicitamente indicative, nessun controllo per tasto non supportato. Le zone Razer hanno selezione Rotella/Logo e anteprima distinta. Scene in una scheda dedicata, anteprima hardware esplicitamente temporanea e annullabile.
+The RGB editor follows the familiar flow of peripheral configurators: device
+selection, schematic preview, effect list, and color or slider controls. Lighting
+and sleep behavior are separate tabs. Drafts become persistent only through Save
+and Apply. Previews are explicitly approximate, and unsupported per-key editing
+is never implied. Razer wheel and logo zones have distinct selection and preview.
+Scenes live in their own tab, and live hardware preview is temporary and
+cancellable.

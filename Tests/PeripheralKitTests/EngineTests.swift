@@ -2,14 +2,17 @@ import XCTest
 import CoreGraphics
 #if SWIFT_PACKAGE
 @testable import PeripheralKit
+private typealias TestRGBColor = PeripheralKit.RGBColor
+#else
+private typealias TestRGBColor = RGBColor
 #endif
 
 @MainActor
 private final class MockDeskLightTransport: DeskLightTransport {
-    struct Command { let id: UUID; let on: Bool; let color: PeripheralKit.RGBColor }
+    struct Command { let id: UUID; let on: Bool; let color: TestRGBColor }
     var commands: [Command] = []
     var completion: ((Result<Void, Error>) -> Void)?
-    func send(to id: UUID, on: Bool, color: PeripheralKit.RGBColor, completion: @escaping (Result<Void, Error>) -> Void) {
+    func send(to id: UUID, on: Bool, color: TestRGBColor, completion: @escaping (Result<Void, Error>) -> Void) {
         commands.append(Command(id: id, on: on, color: color))
         self.completion = completion
     }

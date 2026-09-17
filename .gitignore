@@ -1,6 +1,7 @@
 .build/
 .openrgb-config/
 OpenRGB.json
+Configuration/Local.xcconfig
 
 .DS_Store
 .swiftpm/

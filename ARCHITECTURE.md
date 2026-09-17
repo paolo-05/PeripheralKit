@@ -1,100 +1,142 @@
-# PeripheralKit: architettura
+# PeripheralKit architecture
 
-Decisione del 6 settembre 2026: utility macOS 14+, Swift 6, SwiftUI/AppKit, menu bar, senza dipendenze di rete. Il primo incremento implementa milestone 1 e 2; preserva inoltre i protocolli RGB e la CLI esistenti. Nessun editor visuale generico in questo incremento.
+PeripheralKit is a macOS 14+ Swift 6 application built with SwiftUI and AppKit.
+It runs as a menu-bar accessory, has no network dependency, and keeps hardware
+access behind narrow adapters that can be replaced in tests.
 
-## Confini e API
+## System boundaries
 
-| Sottosistema | API pubblica | Permessi / sandbox | Limiti e fallback |
+| Subsystem | APIs | Permissions | Important limits |
 | --- | --- | --- | --- |
-| App e preferenze | SwiftUI, NSStatusItem, NSWindow | Nessun permesso | LSUIElement, finestra riapribile dal menu |
-| Input | CGEvent.tapCreate, session event tap attivo | Accessibilità; verificare TCC sul bundle firmato. App distribuita senza App Sandbox | Solo otherMouseDown/Up; niente testo tastiera. Tap non disponibile: nessuna soppressione, stato visibile |
-| Azioni | CGEvent keyboard events, post a cghidEventTap | Accessibilità | Ctrl+frecce e Ctrl+su dipendono dalle scorciatoie abilitate in macOS; scorciatoia personalizzabile |
-| Dispositivi | IOHIDManager e proprietà IOHIDDevice | Monitoraggio input per accesso HID, richiesta esplicita | Identità VID/PID + seriale, altrimenti location e interfaccia; non stabile cambiando porta |
-| Regole | Modelli Codable, matcher sincrono puro | Nessuno | Una regola per pulsante nella UI; prima corrispondenza vince; sequenza di azioni separata dal tap |
-| Sleep | NSWorkspace willSleep/didWake e screensDidSleep/Wake | Nessuno | Conserviamo il comportamento già usato. Le notifiche non garantiscono completamento USB prima della sospensione; nessuna assertion che ritardi lo stop |
-| RGB | Adapter compilati, IOHIDDeviceSetReport | Accesso HID, no sandbox nella distribuzione locale | Drevo output 32 byte e Razer feature 90 byte già presenti. Ripristino del profilo configurato, NON lettura dello stato arbitrario del firmware |
-| Login | SMAppService.mainApp | App bundle installato, eventuale approvazione in Impostazioni | Stato reale del servizio; niente nuovo LaunchAgent |
-| Persistenza | JSON atomico in Application Support | Nessuno fuori sandbox | Unico settings.json PeripheralKit, errori esposti senza sovrascrivere file corrotto |
-| Diagnostica | Logger unificato + buffer in memoria limitato | Nessuno | Metadati dei soli pulsanti aggiuntivi; nessun contenuto digitato |
+| Application | SwiftUI, AppKit, `NSStatusItem`, `NSWindow` | None | `LSUIElement` accessory app with a menu-reopenable settings window |
+| Mouse input | `CGEvent.tapCreate` session event tap | Accessibility | Observes only `otherMouseDown` and `otherMouseUp`; no typed text |
+| Actions | Synthetic `CGEvent` keyboard events posted to the HID tap | Accessibility | Mission Control shortcuts must be enabled in macOS |
+| HID inventory | `IOHIDManager`, `IOHIDDevice` properties | Input Monitoring | VID/PID plus serial, registry, or location identity is not a reliable mouse-event source |
+| Rules | Codable models and a synchronous matcher | None | Application rules precede global rules; first match wins |
+| Power events | `NSWorkspace` sleep/wake and display notifications | None | Pre-sleep USB/Bluetooth completion is best effort |
+| USB RGB | Compiled adapters and `IOHIDDeviceSetReport` | Input Monitoring | Restores the configured profile; cannot observe arbitrary firmware state |
+| Bluetooth | CoreBluetooth | Bluetooth | Supports a narrow HappyLighting/Triones command format; no physical-state readback |
+| Login | `SMAppService.mainApp` | User approval may be required | Requires an installed app bundle |
+| Persistence | Atomic JSON in Application Support | None | A corrupt file is reported and never silently replaced |
+| Diagnostics | Unified logging and a bounded in-memory buffer | None | Dynamic unified-log content is private; no keystroke content |
 
-## Identità degli eventi
+The distributed app is not sandboxed because direct HID access and the active
+event tap are core features. No private API or kernel driver is used.
 
-CGEvent non espone un'identità USB pubblica affidabile del mouse sorgente. La lista HID è un inventario e non dimostra quale mouse abbia generato un click. Il primo incremento applica le mappature a tutti i mouse; la cattura dichiara «origine non disponibile». Le condizioni dispositivo rifiutano eventi privi di identità. Non correlare arbitrariamente timestamp HID/Quartz: con più mouse o eventi simultanei sarebbe una falsa garanzia. L'isolamento per dispositivo rimane P1 da investigare con input IOHID e test hardware.
+## Event identity and rule evaluation
 
-## Flusso
+Quartz does not expose a reliable public USB identity for the mouse that created
+an event. The HID list is therefore an inventory, not proof of event origin.
+Mappings apply to all mice, and capture explicitly reports that the physical
+source is unavailable. Correlating HID and Quartz timestamps would create false
+confidence when multiple devices or simultaneous events are present.
 
-InputEventSource → RuleEngine → ActionExecutor. Il tap valuta solo una fotografia delle regole e decide immediatamente pass-through/soppressione; l'esecuzione viene accodata. Down e up restano accoppiati anche se la regola viene disattivata durante il click. Eventi sintetici marcati; nessun monitor globale di tasti.
+The input path is:
 
-SystemEventMonitor → stato combinato sistema/schermo → coordinatore RGB → RGBDeviceAdapter. Una coda seriale separa HID dalla UI; il profilo prima dello stop viene mantenuto fino al ripristino. Le notifiche duplicate non sovrascrivono il profilo. Una generazione cancella i ripristini superati; ogni passaggio usa tentativi a intervalli 0, 250 ms, 500 ms, 1 s, 2 s, 4 s e 8 s dopo il ritardo configurato. Nessun comando RGB viene inviato solo perché si apre l'app.
+```text
+InputEventSource → RuleEngine → ActionExecutor
+```
 
-## Struttura
+The event tap evaluates an immutable rule snapshot and immediately chooses pass
+through or suppression. Action execution is queued separately. Mouse-down and
+mouse-up remain paired if a rule changes during a click. Synthetic events are
+marked so they cannot feed back into the input path.
 
-- `Sources/PeripheralKit/App/`: lifecycle, menu, preferenze, stato osservabile.
-- `Sources/PeripheralKit/Core/`: eventi, condizioni, regole, configurazione JSON.
-- `Sources/PeripheralKit/Input/`: event tap e azioni Quartz.
-- `Sources/PeripheralKit/Hardware/`: protocolli RGB originali e adapter.
-- `Sources/PeripheralKit/System/`: monitor sleep, inventario HID.
-- `Tests/PeripheralKitTests/`: pacchetti originali e test di regressione/matcher/persistenza.
-- `PeripheralKit.xcodeproj`: app nativa; `Package.swift`: build e test CLI senza dipendenze.
+Application-specific rules precede global rules while retaining their order.
+The action engine checks posting permission, creates the complete modifier and
+key sequence first, then posts modifiers down, key down/up, and modifiers up in
+reverse order.
 
-## Rischi e piano
+## Power and RGB flow
 
-1. Shell app, permessi, diagnostica, build e test.
-2. Pulsanti 4/5, cattura annullabile, scorciatoie e soppressione, build e test.
-3. Accettazione manuale su DeathAdder: retro → Space precedente, fronte → successivo. Senza permessi e input fisico non dichiarare superata questa verifica.
-4. In seguito: identificazione per dispositivo, profili app, editor automazioni, snapshot reale se il protocollo lo permette, OpenRGB opzionale.
+```text
+SystemEventMonitor → combined system/display state → RGB coordinators → device adapters
+```
 
-Non importare codice GPL da OpenRazer/OpenRGB: i pacchetti esistenti restano isolati, riferimenti MIT RazerControl e documentazione protocollo da riesaminare prima di distribuzione pubblica. Nessuna licenza generale inventata.
+USB work runs away from the UI actor. The configured profile is snapshotted
+before sleep and retained until restoration completes. Duplicate notifications
+do not overwrite it. A generation token invalidates obsolete retries.
 
-## Fonti e verifica API
+Each USB restoration stage uses bounded retries after the configured delay:
+immediately, 250 ms, 500 ms, 1 s, 2 s, 4 s, and 8 s. Drevo restoration performs
+two additional reopen-and-send passes after a first successful command. Keyboard
+and mouse progress independently.
 
-- [Apple: CGEvent tap](https://developer.apple.com/documentation/coregraphics/cgevent/tapcreate(tap:place:options:eventsofinterest:callback:userinfo:))
-- [Apple: CGEvent](https://developer.apple.com/documentation/coregraphics/cgevent)
-- [Apple: notifiche sleep/wake e limiti](https://developer.apple.com/library/archive/qa/qa1340/_index.html)
-- [Apple: SMAppService register](https://developer.apple.com/documentation/servicemanagement/smappservice/register())
-- [OpenRazer: riferimento protocollo, non codice importato](https://github.com/openrazer/openrazer/blob/master/driver/razercommon.h)
-- [OpenRGB: disponibilità macOS, backend futuro opzionale](https://openrgb.org/releases.html)
+The desk-light coordinator is isolated from USB work and follows CoreBluetooth's
+main-actor delegate model. It records requested state rather than inventing a
+physical state. Wake restoration waits at least one second, tries at most three
+times with a 15-second operation timeout, and waits two seconds between attempts.
+Manual commands, disabled automation, device removal, and a new sleep generation
+invalidate pending work.
 
-Le firme effettive vengono verificate compilando contro il SDK macOS locale. Nessuna API privata né driver kernel.
+## RGB editor and scenes
 
-## Aggiornamento: lifecycle gestito da Xcode
+The editor keeps independent keyboard and mouse drafts. Saving one device takes
+an immutable snapshot, persists it, and sends it through the same coordinator
+used for power events. Applying a device manually is independent of whether it
+participates in sleep automation.
 
-Il progetto Xcode gestisce build, test, archive e installazione. Due schemi condivisi: `PeripheralKit` e `PeripheralKit Install`. Il secondo usa un target aggregato dipendente dall'app e una fase nativa Copy Files, con destinazione configurabile in `Configuration/Local.xcconfig`. Nessuna fase shell, nessun keychain dedicato: firma locale Xcode con certificato persistente `PeripheralKit Local Development` nel portachiavi login.
+Temporary hardware preview is debounced and never persisted. Cancelling, closing
+the editor, changing device, or sleeping restores or invalidates the preview.
 
-`PeripheralKitTests` è un target XCTest senza host che compila gli stessi sorgenti di produzione esclusi CLI e main, così i test non avviano monitor, TCC. Le dipendenze hardware sono sostituite da mock.
+Razer's optional `logo` profile permits independent scroll-wheel and logo zones.
+Without it, both zones follow the primary profile for backward compatibility.
 
-Le preferenze RGB e mouse sono caricate soltanto dal file PeripheralKit. Il coordinatore RGB dell'app è l'unico monitor di stop/risveglio. La CLI offre operazioni diagnostiche e RGB esplicite, senza un secondo servizio residente.
+A custom spectrum palette stores 2–8 colors and a duration from 2 to 120 seconds.
+`RGBGradient` interpolates channels with `ContinuousClock` and closes the last-to-
+first segment. The software loop has its own generation, stops before sleep or a
+new fixed effect, resumes when appropriate, and terminates after three consecutive
+USB failures. Individual frames are not written to the log.
 
-ActionEngine controlla CGPreflightPostEventAccess e pubblica a cghidEventTap una sequenza marcata: modificatori premuti, down/up del tasto, modificatori rilasciati in ordine inverso. Il tap di ricezione mouse resta a livello sessione. La UI permette di provare il cambio Space; una notifica spaceChanged costituisce una conferma separata dall'invio.
+An `RGBScene` stores RGB configuration plus the last requested desk-light state
+and color. It intentionally does not bind to a Bluetooth identifier, so a scene
+can target the currently selected controller.
 
-La sequenza segue CGEventCreateKeyboardEvent del SDK Apple, che richiede esplicitamente gli eventi dei modificatori. Tutti gli eventi di una scorciatoia sono creati prima di pubblicarli per evitare modificatori senza rilascio in caso di errore.
+## Persistence and signing
 
-## Ripristino USB e identità stabile
+`ConfigurationStore` writes sorted, pretty-printed JSON atomically to:
 
-L’editor RGB mantiene bozze separate: Salva e applica salva il dispositivo selezionato con ConfigurationStore e invia uno snapshot immutabile tramite AppRuntime allo stesso RGBSleepCoordinator usato dagli eventi di alimentazione. L’actor rifiuta l’invio durante lo stop, invalida i reinvii del dispositivo scelto e preserva quelli dell’altro. Le scritture restano fuori dal MainActor. Il risultato non viene presentato come conferma di una bozza modificata dopo l’invio.
+```text
+~/Library/Application Support/PeripheralKit/settings.json
+```
 
-La Drevo richiede due reinvii ritardati dopo il primo invio riuscito (attese aggiuntive di 2 e 5 secondi), riaprendo il dispositivo per ogni scrittura. Il coordinatore mantiene lo snapshot finché tutti i passaggi sono terminati; gli adapter procedono in task separati sullo stesso actor e un nuovo sleep invalida l'intera generazione. I log di alimentazione e invio RGB usano il livello notice per permettere diagnosi anche dopo una riapertura dell'app.
+Optional fields preserve compatibility with older settings. Validation occurs
+on load and before every save.
 
-Tutti i target riusano `PERIPHERALKIT_SIGNING_IDENTITY`. Il requisito designato combina bundle ID e certificato leaf; non include il cdhash specifico della build. Nessuna chiave nel repository, nessuna rigenerazione o firma ad hoc nel processo di build. La prima transizione di identità richiede nuovamente i consensi macOS.
+`Configuration/Defaults.xcconfig` provides portable ad-hoc signing and the
+default install directory. It optionally includes ignored
+`Configuration/Local.xcconfig`, allowing a developer to select a persistent
+identity without committing machine-specific settings. A stable certificate,
+bundle identifier, and bundle path help macOS preserve privacy grants across
+builds. No key or certificate belongs in the repository.
 
-## Stop e ripristino della striscia BLE
+## Project layout
 
-`AppRuntime` inoltra lo stesso stato combinato sistema/schermi a `DeskLightSleepCoordinator`, separato dall’actor USB e isolato sul MainActor come i delegate CoreBluetooth. `DeskLightTransport` permette test senza radio. Il controller espone l’esito della scrittura tramite callback; cancellazione e cambio generazione rendono inerti i callback superati.
+- `Sources/PeripheralKit/App`: lifecycle, menu, settings, observable state.
+- `Sources/PeripheralKit/Core`: configuration, rules, models, persistence.
+- `Sources/PeripheralKit/Input`: event tap and Quartz action execution.
+- `Sources/PeripheralKit/Hardware`: USB and Bluetooth protocol adapters.
+- `Sources/PeripheralKit/System`: system events, HID inventory, restoration.
+- `Tests/PeripheralKitTests`: packet, engine, persistence, and lifecycle tests.
+- `PeripheralKit.xcodeproj`: authoritative application build.
+- `Package.swift`: compatibility entry point for Swift command-line tooling.
 
-`DeskLightConfiguration` aggiunge campi opzionali `sleepEnabled`, `requestedOn` e `requestedColor`, compatibili con i file precedenti. Lo stato sconosciuto non viene interpretato come acceso. I comandi manuali memorizzano l’intento prima dell’invio e invalidano ogni ripristino. Si conserva l’ultimo colore richiesto, distinto dal colore scelto nella UI e non ancora applicato. Nessuna lettura dello stato fisico o sincronizzazione con l’app del telefono.
+The XCTest target has no app host. It compiles production sources without the
+application and CLI entry points, injects hardware transports, collects Quartz
+events in memory, and never reads the user's real settings.
 
-Lo stop tenta uno spegnimento, senza bloccare la sospensione del Mac. Il wake attende almeno un secondo e permette tre tentativi, ciascuno limitato dal timeout BLE di 15 secondi, con due secondi fra i tentativi. La disattivazione, la rimozione del controller e nuovi eventi di stop annullano le operazioni precedenti. L’interruttore BLE è indipendente da `rgbEnabled`; le opzioni sistema/schermi e ripristino sono condivise.
+## References and provenance
 
+Apple API links and third-party protocol sources are listed in
+`THIRD_PARTY_NOTICES.md`. OpenRazer was used only as protocol documentation; GPL
+source is not imported. The current adapters use Apple IOKit directly and do not
+bundle HIDAPI or OpenRGB.
 
-## Editor per dispositivo e gradiente software
+## Known risks and roadmap
 
-L’editor mantiene bozze separate per tastiera e mouse. Salva e applica salva soltanto la periferica selezionata; HEX non validi bloccano il comando. L’applicazione mirata invalida i reinvii del dispositivo scelto e riprogramma quelli ancora necessari per l’altro, preservandone lo snapshot. L’inclusione nell’automazione è distinta dall’applicazione manuale.
-
-La configurazione mouse aggiunge `spectrumColors` e `spectrumDurationSeconds` opzionali. `RGBGradient` valida 2–8 colori e 2–120 secondi, interpola i canali RGB e chiude il ciclo ultimo→primo. Senza palette il pacchetto Spectrum resta invariato. Con palette si invia il primo colore fisso e il coordinatore avvia un task con generazione separata dai reinvii tastiera. Il tempo di fase usa ContinuousClock; le scritture HID restano isolate nell’actor. Il loop si cancella prima dello spegnimento del mouse incluso, riparte dopo il ripristino e all’avvio dell’app per un gradiente salvato. La temporizzazione limita il carico USB; tre fallimenti consecutivi terminano il loop. Nessun frame viene registrato individualmente nei log.
-
-
-### Scene, zone e anteprima
-
-`RGBScene` conserva una Configuration e lo stato/colore BLE richiesto, senza legarsi a un identificatore di controller. `MouseConfiguration.logo` opzionale abilita una zona distinta; se assente segue `primary`, preservando i JSON precedenti. Il ciclo software calcola i frame per ogni zona animata e invia soltanto quelle zone, evitando di riavviare gli effetti firmware dell’altra.
-
-Le variazioni dell’inventario HID avviano ripristini con tentativi limitati nell’attore RGB. Le interfacce sono aggregate per adapter; i comandi rispettano la sequenza di alimentazione e sono rifiutati durante stop. L’anteprima è una bozza non persistita, accodata sullo stesso percorso; chiusura e stop invalidano anche i debounce pendenti. Le regole con condizione applicazione precedono quelle generali, mantenendo l’ordine interno.
+1. Physical device behavior can differ by firmware revision even when VID/PID
+   matches.
+2. macOS may suspend before best-effort pre-sleep writes finish.
+3. Mouse-event source isolation is unavailable with the current public APIs.
+4. Future work may include per-device input, generic editors, automation rules,
+   real state readback where supported, and an optional OpenRGB backend.

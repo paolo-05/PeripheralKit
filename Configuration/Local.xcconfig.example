@@ -1,0 +1,6 @@
+// Copy this file to Local.xcconfig and adjust it for your Mac.
+PERIPHERALKIT_INSTALL_DIR = $(HOME)/Applications
+
+// Use a stable Apple Development, Developer ID, or local code-signing identity
+// if you want macOS privacy grants to survive rebuilds.
+PERIPHERALKIT_SIGNING_IDENTITY = PeripheralKit Local Development

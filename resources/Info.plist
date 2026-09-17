@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>it</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>PeripheralKit</string>
 	<key>CFBundleIdentifier</key>
@@ -27,11 +27,11 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Utility locale per Drevo Tyrfing V2 e Razer DeathAdder V2</string>
+	<string>Local utility for Drevo Tyrfing V2 and Razer DeathAdder V2</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>PeripheralKit usa Bluetooth per accendere, spegnere e impostare il colore della striscia LED della scrivania.</string>
+	<string>PeripheralKit uses Bluetooth to power and set the color of your desk LED strip.</string>
 	<key>NSInputMonitoringUsageDescription</key>
-	<string>PeripheralKit usa l'accesso HID esclusivamente per spegnere e ripristinare l'illuminazione delle periferiche USB.</string>
+	<string>PeripheralKit uses HID access to control and restore the lighting of supported USB peripherals.</string>
 	<key>PeripheralKitInstallDirectory</key>
 	<string>$(PERIPHERALKIT_INSTALL_DIR)</string>
 </dict>

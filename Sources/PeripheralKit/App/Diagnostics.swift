@@ -16,9 +16,9 @@ final class Diagnostics: ObservableObject {
     func record(_ message: String, error: Bool = false, persistent: Bool = false) {
         entries.append(DiagnosticEntry(message: message, isError: error))
         if entries.count > 300 { entries.removeFirst(entries.count - 300) }
-        if error { logger.error("\(message, privacy: .public)") }
-        else if persistent { logger.notice("\(message, privacy: .public)") }
-        else { logger.info("\(message, privacy: .public)") }
+        if error { logger.error("\(message, privacy: .private)") }
+        else if persistent { logger.notice("\(message, privacy: .private)") }
+        else { logger.info("\(message, privacy: .private)") }
     }
 
     func clear() { entries.removeAll() }

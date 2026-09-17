@@ -1,25 +1,38 @@
 # Product
 
 ## Register
-product
+
+Product
 
 ## Users
-Utente macOS con Drevo Tyrfing V2 e Razer DeathAdder V2, periferiche su dock USB e più Spaces. Configura pochi controlli e lascia l'utility nella barra menu.
 
-## Product Purpose
-Offrire mappature mouse e automazioni hardware in un’app nativa, preservando lo spegnimento della scrivania quando schermi o Mac dormono.
+A macOS user with a Drevo Tyrfing V2, a Razer DeathAdder V2, USB peripherals
+connected through a dock, and multiple Spaces. They configure a small number of
+controls and leave the utility running in the menu bar.
 
-## Brand Personality
-Nativa, discreta, comprensibile. Il riferimento richiesto è una piccola utility macOS, con preferenze standard e messaggi precisi.
+## Product purpose
+
+Provide mouse mappings and hardware automation in a native application while
+keeping desk lighting powered down when the displays or Mac sleep.
+
+## Brand personality
+
+Native, quiet, and understandable: a small macOS utility with familiar settings
+and precise status messages.
 
 ## Anti-references
-Il brief esclude Electron, la replica completa di BetterTouchTool, plugin dinamici e un editor visuale generico nel primo incremento.
 
-## Design Principles
-- Mostrare solo capacità effettivamente disponibili.
-- Rendere immediato disabilitare le rimappature.
-- Conservare le impostazioni RGB esistenti.
-- Separare eventi, regole e azioni.
+PeripheralKit is not an Electron application, a full BetterTouchTool replacement,
+a dynamic plugin host, or a generic visual automation editor.
 
-## Accessibility & Inclusion
-Controlli nativi, etichette testuali, supporto VoiceOver e navigazione tastiera. Nessuna informazione affidata solo al colore; nessuna registrazione di testo digitato.
+## Design principles
+
+- Show only capabilities that are genuinely available.
+- Make remapping easy to disable.
+- Preserve existing RGB settings.
+- Keep events, rules, and actions separate.
+
+## Accessibility and inclusion
+
+Use native controls, textual labels, VoiceOver support, and keyboard navigation.
+Never rely on color alone, and never record typed text.
