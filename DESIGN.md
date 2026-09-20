@@ -13,7 +13,8 @@ repository and contributor documentation are in English.
 The RGB editor follows the familiar flow of peripheral configurators: device
 selection, schematic preview, effect list, and color or slider controls. Lighting
 and sleep behavior are separate tabs. Drafts become persistent only through Save
-and Apply. Previews are explicitly approximate, and unsupported per-key editing
-is never implied. Razer wheel and logo zones have distinct selection and preview.
+and Apply. The Drevo preview follows its explicit 87-key ANSI TKL geometry;
+lighting remains indicative, and unsupported per-key editing is never implied.
+Razer wheel and logo zones have distinct selection and preview.
 Scenes live in their own tab, and live hardware preview is temporary and
 cancellable.

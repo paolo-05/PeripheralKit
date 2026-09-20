@@ -23,13 +23,36 @@ The tests use in-memory Quartz event collectors and mocked USB/Bluetooth
 transports. They do not post global input, access the real settings file, or
 require connected hardware.
 
-On September 17, 2026, the command completed with **61 passed tests, 0 failures,
+On September 18, 2026, the command completed with **74 passed tests, 0 failures,
 and 0 skipped tests** on arm64 macOS. The application also built successfully
-with code signing disabled. A redundant, unassigned 1024×1024 icon that duplicated
-the assigned 512@2x asset was removed from the catalog.
+with code signing disabled. Coverage now includes the 87-key Drevo layout,
+complete global Drevo packet fields, legacy `memory`/direction decoding,
+keyboard range validation, and latest-only RGB preview scheduling.
 
 The SwiftPM compatibility path was verified separately with `swift test`: the
-same 61 XCTest cases passed with no failures.
+same 74 XCTest cases passed with no failures.
+
+## Drevo layout and RGB editor — September 18, 2026
+
+- The previous filtered 6×18 keyboard grid was replaced by an explicit 87-key
+  ANSI TKL model with stable key identities, correct wide keys, complete
+  function/navigation blocks, and an inverted-T arrow cluster.
+- A native SwiftUI render at 760×150 was generated and inspected against
+  `drevo-kb-layout.png`; all rows and clusters were visible without overlap or
+  clipping, and the horizontal rainbow followed physical key position.
+- RGB controls now use typed mode capabilities. The persisted `"memory"` value
+  remains backward compatible but is presented conservatively as a reactive
+  fade rather than an unverified stored-profile recall.
+- Direction is constrained to two values and exposed only for stream and radar.
+  Those visual hardware behaviors and command `0x0D` still require a dedicated
+  physical-device pass before being recorded as optically confirmed.
+- Pending hardware previews now discard superseded drafts and cancellation has
+  one restore path. Regression tests cover latest-only application and a single
+  saved-profile restoration.
+- The Debug app was built and launched with the settings window in safe mode.
+  macOS denied this terminal Accessibility and Screen Recording automation, so
+  navigation/screenshot capture of the live window was not available; the
+  preview itself was inspected through an off-screen native SwiftUI render.
 
 ## Scenes, zones, and reconnection — September 13, 2026
 

@@ -110,6 +110,12 @@ struct AppConfiguration: Codable, Equatable, Sendable {
         guard rgb.wakeDelaySeconds.isFinite, (0...30).contains(rgb.wakeDelaySeconds) else {
             throw PeripheralKitError.invalidConfiguration("Il ritardo di risveglio deve essere tra 0 e 30 secondi.")
         }
+        guard (0...100).contains(rgb.keyboard.brightness) else {
+            throw PeripheralKitError.invalidConfiguration("La luminosità della tastiera deve essere tra 0 e 100.")
+        }
+        guard (0...100).contains(rgb.keyboard.speed) else {
+            throw PeripheralKitError.invalidConfiguration("La velocità della tastiera deve essere tra 0 e 100.")
+        }
         if let deskLight {
             _ = try RGBColor(hex: deskLight.color)
             if let requestedColor = deskLight.requestedColor { _ = try RGBColor(hex: requestedColor) }

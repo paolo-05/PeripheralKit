@@ -1,6 +1,34 @@
 import AppKit
 
 @MainActor
+final class RGBOperationQueue {
+    private var tail: Task<Void, Never>?
+    private var previewRevision = 0
+
+    func enqueue(_ operation: @escaping @MainActor () async -> Void) {
+        let previous = tail
+        tail = Task {
+            await previous?.value
+            await operation()
+        }
+    }
+
+    func enqueuePreview(_ operation: @escaping @MainActor () async -> Void) {
+        previewRevision += 1
+        let expected = previewRevision
+        let previous = tail
+        tail = Task { [weak self] in
+            await previous?.value
+            guard let self, self.previewRevision == expected else { return }
+            await operation()
+        }
+    }
+
+    func invalidatePreviews() { previewRevision += 1 }
+    func finish() async { await tail?.value }
+}
+
+@MainActor
 final class AppRuntime {
     private let model: AppModel
     private let input = InputEventEngine()
@@ -9,7 +37,7 @@ final class AppRuntime {
     private let rgb: RGBSleepCoordinator
     private let deskLight: DeskLightSleepCoordinator
     private var policy = SleepPolicy()
-    private var powerTask: Task<Void, Never>?
+    private let rgbQueue = RGBOperationQueue()
     private var preview: (Configuration, RGBProfileTarget)?
     private var captureTimeout: Task<Void, Never>?
 
@@ -36,20 +64,17 @@ final class AppRuntime {
     }
 
     private func bindModelActions() {
-        model.previewCancelRequested = { [weak self] in
-            guard let self, let preview = self.preview else { return }
-            self.model.previewRequested?(nil, preview.1)
-        }
         model.previewRequested = { [weak self] configuration, target in
-            guard let self else { return }
+            guard let self, !self.model.rgbSleeping else { return }
             self.preview = configuration.map { ($0, target) }
             let value = configuration ?? self.model.configuration.rgb
-            let previous = self.powerTask
-            self.powerTask = Task { [weak self] in
-                await previous?.value
+            self.rgbQueue.enqueuePreview { [weak self] in
                 guard let self else { return }
                 let result = await self.rgb.applyProfile(value, target: target)
-                if !result.succeeded { self.model.rgbApplyResult = result; self.model.errorMessage = result.failures.joined(separator: "\n") }
+                if !result.succeeded {
+                    self.model.rgbApplyResult = result
+                    self.model.errorMessage = result.failures.joined(separator: "\n")
+                }
             }
         }
         model.devicesChanged = { [weak self] before, after in
@@ -61,20 +86,17 @@ final class AppRuntime {
                 .compactMap { RGBProfileTarget.matching($0)?.adapterID })
             guard !targets.isEmpty else { return }
             let configuration = self.preview?.0 ?? self.model.configuration.rgb
-            let previous = self.powerTask
-            self.powerTask = Task { [weak self] in
-                await previous?.value
+            self.rgbQueue.enqueue { [weak self] in
                 await self?.rgb.reconnect(targets, configuration: configuration)
             }
         }
         model.rgbApplyRequested = { [weak self] configuration, target in
             guard let self, !self.model.rgbApplying else { return }
+            self.rgbQueue.invalidatePreviews()
             self.preview = nil
             self.model.rgbApplying = true
             self.model.rgbApplyResult = nil
-            let previous = self.powerTask
-            self.powerTask = Task { [weak self] in
-                await previous?.value
+            self.rgbQueue.enqueue { [weak self] in
                 guard let self else { return }
                 var sent = configuration
                 if target == nil { sent.keyboard.enabled = true; sent.mouse.enabled = true }
@@ -140,10 +162,8 @@ final class AppRuntime {
 
     private func resumeSavedMouseCycleIfNeeded() {
         guard model.hidGranted, model.configuration.restoreOnReconnect == false else { return }
-        let previous = powerTask
         let configuration = model.configuration.rgb
-        Task { [weak self] in
-            await previous?.value
+        rgbQueue.enqueue { [weak self] in
             await self?.rgb.resumeSavedMouseCycle(configuration)
         }
     }
@@ -177,20 +197,20 @@ final class AppRuntime {
         deskLight.update(configuration: configuration, policy: policy)
         let sleep = policy.shouldSleep(configuration: configuration)
         if sleep && !model.rgbSleeping {
+            rgbQueue.invalidatePreviews()
             model.previewCancellation += 1
             preview = nil
         }
         model.rgbSleeping = sleep
-        let previous = powerTask
         let rgb = self.rgb
         // Preserve notification ordering across the actor boundary.
-        powerTask = Task {
-            await previous?.value
+        rgbQueue.enqueue {
             await rgb.transition(toSleep: sleep, configuration: configuration)
         }
     }
 
     func stop() {
+        rgbQueue.invalidatePreviews()
         let rgb = self.rgb
         Task { await rgb.shutdown() }
         deskLight.cancel()

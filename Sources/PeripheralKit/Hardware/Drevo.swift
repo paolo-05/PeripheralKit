@@ -12,14 +12,14 @@ struct DrevoPacket: Equatable {
         case .static, .rainbow: command = 0x01
         case .breathing: command = 0x02
         case .stream: command = 0x03
-        case .memory: command = 0x0d
+        case .reactive: command = 0x0d
         case .radar: command = 0x10
         }
 
         result[0...6] = [0x06, 0xbe, 0x15, 0x00, 0x01, 0x01, command][...]
         result[7] = Self.scaled(configuration.speed, maximum: 9)
         result[8] = sleeping ? 0 : Self.scaled(configuration.brightness, maximum: 6)
-        result[9] = UInt8(clamping: configuration.direction)
+        result[9] = UInt8(configuration.direction.rawValue)
 
         let color = sleeping ? RGBColor(red: 0, green: 0, blue: 0) : try RGBColor(hex: configuration.color)
         let secondary = sleeping ? RGBColor(red: 0, green: 0, blue: 0) : try RGBColor(hex: configuration.secondaryColor)

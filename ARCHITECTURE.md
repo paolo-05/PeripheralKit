@@ -125,6 +125,12 @@ The XCTest target has no app host. It compiles production sources without the
 application and CLI entry points, injects hardware transports, collects Quartz
 events in memory, and never reads the user's real settings.
 
+`DrevoKeyLayout.swift` is the UI-independent source of truth for the physical
+87-key ANSI TKL geometry. Stable physical key identities are intentionally kept
+separate from unverified firmware report identifiers. The RGB editor renders
+from that model, while `RGBOperationQueue` serializes hardware work and drops
+queued preview revisions that have already been superseded.
+
 ## References and provenance
 
 Apple API links and third-party protocol sources are listed in

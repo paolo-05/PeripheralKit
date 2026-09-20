@@ -714,6 +714,41 @@ final class RGBSleepTests: XCTestCase, @unchecked Sendable {
     }
 }
 
+@MainActor
+final class RGBOperationQueueTests: XCTestCase {
+    func testOnlyLatestPendingPreviewRuns() async {
+        let queue = RGBOperationQueue()
+        var events: [String] = []
+
+        queue.enqueue {
+            try? await Task.sleep(for: .milliseconds(20))
+            events.append("blocker")
+        }
+        queue.enqueuePreview { events.append("first") }
+        queue.enqueuePreview { events.append("second") }
+        queue.enqueuePreview { events.append("latest") }
+
+        await queue.finish()
+        XCTAssertEqual(events, ["blocker", "latest"])
+    }
+
+    func testInvalidationSkipsPreviewAndRunsSavedRestoreOnce() async {
+        let queue = RGBOperationQueue()
+        var events: [String] = []
+
+        queue.enqueue {
+            try? await Task.sleep(for: .milliseconds(20))
+            events.append("blocker")
+        }
+        queue.enqueuePreview { events.append("obsolete preview") }
+        queue.invalidatePreviews()
+        queue.enqueue { events.append("saved profile") }
+
+        await queue.finish()
+        XCTAssertEqual(events, ["blocker", "saved profile"])
+    }
+}
+
 final class ExtendedConfigurationTests: XCTestCase {
     func testApplicationRuleOverridesGlobalAndFallsBackOutsideApp() {
         let global = Rule(name: "Global", trigger: .mouseButton(4), actions: [.previousSpace])
@@ -741,5 +776,16 @@ final class ExtendedConfigurationTests: XCTestCase {
         config = AppConfiguration()
         config.scenes = [RGBScene(name: " ", rgb: Configuration())]
         XCTAssertThrowsError(try config.validate())
+    }
+
+    func testKeyboardPercentagesMustStayInEditorRange() throws {
+        var config = AppConfiguration()
+        config.rgb.keyboard.brightness = -1
+        XCTAssertThrowsError(try config.validate())
+        config.rgb.keyboard.brightness = 100
+        config.rgb.keyboard.speed = 101
+        XCTAssertThrowsError(try config.validate())
+        config.rgb.keyboard.speed = 0
+        XCTAssertNoThrow(try config.validate())
     }
 }
