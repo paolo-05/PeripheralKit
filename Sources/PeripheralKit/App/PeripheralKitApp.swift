@@ -129,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showSettings(); return true }
-    func windowWillClose(_ notification: Notification) { model.cancelRecording(); model.previewCancellation += 1; model.previewCancelRequested?() }
+    func windowWillClose(_ notification: Notification) { model.cancelRecording(); model.previewCancellation += 1 }
     func applicationWillTerminate(_ notification: Notification) { runtime?.stop() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }

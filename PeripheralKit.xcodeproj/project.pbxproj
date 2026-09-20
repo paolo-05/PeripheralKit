@@ -8,6 +8,20 @@
         "D01100000000000000000001" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/PeripheralKit/Hardware/HappyLighting.swift; sourceTree = SOURCE_ROOT; };
         "D01100000000000000000002" = { isa = PBXBuildFile; fileRef = "D01100000000000000000001"; };
         "D01100000000000000000003" = { isa = PBXBuildFile; fileRef = "D01100000000000000000001"; };
+        "A10000000000000000000001" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/PeripheralKit/Hardware/DrevoKeyLayout.swift; sourceTree = SOURCE_ROOT; };
+        "A10000000000000000000002" = { isa = PBXBuildFile; fileRef = "A10000000000000000000001"; };
+        "A10000000000000000000003" = { isa = PBXBuildFile; fileRef = "A10000000000000000000001"; };
+        "A10000000000000000000004" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/PeripheralKitTests/DrevoLayoutTests.swift; sourceTree = SOURCE_ROOT; };
+        "A10000000000000000000005" = { isa = PBXBuildFile; fileRef = "A10000000000000000000004"; };
+        "A20000000000000000000001" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/PeripheralKit/App/RGBStudioView.swift; sourceTree = SOURCE_ROOT; };
+        "A20000000000000000000002" = { isa = PBXBuildFile; fileRef = "A20000000000000000000001"; };
+        "A20000000000000000000003" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/PeripheralKit/App/RGBDevicePreview.swift; sourceTree = SOURCE_ROOT; };
+        "A20000000000000000000004" = { isa = PBXBuildFile; fileRef = "A20000000000000000000003"; };
+        "A20000000000000000000005" = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/PeripheralKit/App/RGBColor+SwiftUI.swift"; sourceTree = SOURCE_ROOT; };
+        "A20000000000000000000006" = { isa = PBXBuildFile; fileRef = "A20000000000000000000005"; };
+        "A20000000000000000000007" = { isa = PBXBuildFile; fileRef = "A20000000000000000000001"; };
+        "A20000000000000000000008" = { isa = PBXBuildFile; fileRef = "A20000000000000000000003"; };
+        "A20000000000000000000009" = { isa = PBXBuildFile; fileRef = "A20000000000000000000005"; };
 		"A1C7D4E1F20A4C6D8E0F1234" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "folder.assetcatalog";
@@ -373,6 +387,9 @@
 				"AA4B29A50E01D6998D20F79E",
 				"291F0B470864BB89EAE0C54E",
 				"338BF2466D7545052486B854",
+                "A20000000000000000000001",
+                "A20000000000000000000003",
+                "A20000000000000000000005",
 			);
 			"sourceTree" = "<group>";
 		};
@@ -446,6 +463,10 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
                 "D01100000000000000000002",
+                "A10000000000000000000002",
+                "A20000000000000000000002",
+                "A20000000000000000000004",
+                "A20000000000000000000006",
 				"6FF8E9695821C590AC8C267A",
 				"C5F653A94E0801F3A4170D0E",
 				"C68B99DE579EEB7F79CB7A3A",
@@ -622,6 +643,11 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
                 "D01100000000000000000003",
+                "A10000000000000000000003",
+                "A10000000000000000000005",
+                "A20000000000000000000007",
+                "A20000000000000000000008",
+                "A20000000000000000000009",
 				"A91C9FE1214C79F06026814C",
 				"5601DB6DB1276DB6EEBC0E0A",
 				"990E02821416FE2114D63E00",
@@ -649,6 +675,7 @@
 			"name" = "Hardware";
 			"children" = (
                 "D01100000000000000000001",
+                "A10000000000000000000001",
 				"127DD4D714682EB99C5408CB",
 				"0739D370B07F9514B10AE574",
 				"13EEFED77C75A208C6B7B68F",
@@ -690,6 +717,7 @@
 			"children" = (
 				"E07DD91DC3730D7798BF7881",
 				"2E707E3A00974FA81389B867",
+				"A10000000000000000000004",
 			);
 			"sourceTree" = "<group>";
 		};

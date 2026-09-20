@@ -54,10 +54,62 @@ final class PacketTests: XCTestCase {
         XCTAssertEqual(Array(packet[12...18]), [0, 0, 0, 0, 0, 0, 0])
     }
 
-    func testDrevoDefaultWakePacketUsesRainbowAtFullBrightness() throws {
-        let packet = try DrevoPacket(configuration: KeyboardConfiguration(), sleeping: false).bytes
-        XCTAssertEqual(packet[8], 6)
-        XCTAssertEqual(packet[15], 1)
+    func testDrevoModesUseExpectedCommandsAndRainbowFlag() throws {
+        let cases: [(KeyboardConfiguration.Mode, UInt8)] = [
+            (.static, 0x01), (.rainbow, 0x01), (.breathing, 0x02),
+            (.stream, 0x03), (.reactive, 0x0d), (.radar, 0x10),
+        ]
+        for (mode, command) in cases {
+            var configuration = KeyboardConfiguration()
+            configuration.mode = mode
+            let packet = try DrevoPacket(configuration: configuration, sleeping: false).bytes
+            XCTAssertEqual(packet.count, 32, mode.rawValue)
+            XCTAssertEqual(packet[6], command, mode.rawValue)
+            XCTAssertEqual(packet[15], mode == .rainbow ? 1 : 0, mode.rawValue)
+        }
+    }
+
+    func testDrevoPacketEncodesColorsSpeedBrightnessAndDirection() throws {
+        var configuration = KeyboardConfiguration()
+        configuration.mode = .stream
+        configuration.color = "#123456"
+        configuration.secondaryColor = "#ABCDEF"
+        configuration.speed = 50
+        configuration.brightness = 50
+        configuration.direction = .reverse
+
+        let packet = try DrevoPacket(configuration: configuration, sleeping: false).bytes
+        XCTAssertEqual(packet[7], 5)
+        XCTAssertEqual(packet[8], 3)
+        XCTAssertEqual(packet[9], 1)
+        XCTAssertEqual(Array(packet[12...14]), [0x12, 0x34, 0x56])
+        XCTAssertEqual(Array(packet[16...18]), [0xab, 0xcd, 0xef])
+    }
+
+    func testDrevoPacketClampsPercentagesAtProtocolBoundary() throws {
+        var configuration = KeyboardConfiguration()
+        configuration.speed = 200
+        configuration.brightness = -20
+        let packet = try DrevoPacket(configuration: configuration, sleeping: false).bytes
+        XCTAssertEqual(packet[7], 9)
+        XCTAssertEqual(packet[8], 0)
+    }
+
+    func testLegacyMemoryModeAndIntegerDirectionStillDecode() throws {
+        let json = ##"{"enabled":true,"mode":"memory","color":"#FFFFFF","secondaryColor":"#FF0000","brightness":80,"speed":60,"direction":1}"##
+        let configuration = try JSONDecoder().decode(KeyboardConfiguration.self, from: Data(json.utf8))
+        XCTAssertEqual(configuration.mode, .reactive)
+        XCTAssertEqual(configuration.direction, .reverse)
+    }
+
+    func testKeyboardModeCapabilitiesAreTyped() {
+        XCTAssertTrue(KeyboardConfiguration.Mode.rainbow.usesAutomaticColors)
+        XCTAssertFalse(KeyboardConfiguration.Mode.rainbow.usesPrimaryColor)
+        XCTAssertTrue(KeyboardConfiguration.Mode.reactive.usesPrimaryColor)
+        XCTAssertTrue(KeyboardConfiguration.Mode.reactive.usesSecondaryColor)
+        XCTAssertTrue(KeyboardConfiguration.Mode.stream.supportsDirection)
+        XCTAssertTrue(KeyboardConfiguration.Mode.radar.supportsDirection)
+        XCTAssertFalse(KeyboardConfiguration.Mode.breathing.supportsDirection)
     }
 
     func testScreenSleepAndWakeToggleLighting() {

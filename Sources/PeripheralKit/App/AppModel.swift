@@ -35,7 +35,6 @@ final class AppModel: ObservableObject {
     let safeMode: Bool
     let store = ConfigurationStore()
     var devicesChanged: (([PeripheralDevice], [PeripheralDevice]) -> Void)?
-    var previewCancelRequested: (() -> Void)?
     var previewRequested: ((Configuration?, RGBProfileTarget) -> Void)?
     var configurationChanged: (() -> Void)?
     var testActionRequested: ((Action) -> Void)?

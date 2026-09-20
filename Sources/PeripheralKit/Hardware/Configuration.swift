@@ -19,7 +19,18 @@ struct KeyboardConfiguration: Codable, Equatable, Sendable {
         case breathing
         case stream
         case radar
-        case memory
+        case reactive = "memory"
+
+        var usesPrimaryColor: Bool { self != .rainbow }
+        var usesSecondaryColor: Bool { [.breathing, .stream, .radar, .reactive].contains(self) }
+        var supportsSpeed: Bool { [.breathing, .stream, .radar, .reactive].contains(self) }
+        var supportsDirection: Bool { [.stream, .radar].contains(self) }
+        var usesAutomaticColors: Bool { self == .rainbow }
+    }
+
+    enum Direction: Int, Codable, CaseIterable, Sendable {
+        case forward
+        case reverse
     }
 
     var enabled = true
@@ -28,7 +39,7 @@ struct KeyboardConfiguration: Codable, Equatable, Sendable {
     var secondaryColor = "#FF0000"
     var brightness = 100
     var speed = 100
-    var direction = 0
+    var direction = Direction.forward
 }
 
 struct MouseConfiguration: Codable, Equatable, Sendable {
@@ -36,6 +47,9 @@ struct MouseConfiguration: Codable, Equatable, Sendable {
         case spectrum
         case `static`
         case breathing
+
+        var usesPrimaryColor: Bool { self != .spectrum }
+        var usesAutomaticColors: Bool { self == .spectrum }
     }
 
     var enabled = true
